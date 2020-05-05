@@ -1,5 +1,9 @@
 {
     "cSpell.words": [
-        "NOQA"
+        "NOQA",
+        "mplhep",
+        "numpy",
+        "pyplot",
+        "pytest"
     ]
 }
