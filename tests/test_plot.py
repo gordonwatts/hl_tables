@@ -12,16 +12,18 @@ def call_make_local_hist(mocker):
         data = (20, 30)
         return data, bins
 
-    import hl_tables
-    # mocker.patch('hl_tables.local.make_local', side_effect=lambda df: rtn_hist())
-    mocker.patch.object(hl_tables.local, 'make_local', side_effect=lambda df: rtn_hist())
+    return mocker.patch('hl_tables.local.make_local', side_effect=lambda df: rtn_hist())
 
 
-def test_histogram(call_make_local_hist):
-    # WORKS
-    from hl_tables.local import make_local
-    dummy = make_local(None)
+@pytest.fixture
+def mock_plotting(mocker):
+    mocker.patch('matplotlib.pyplot.subplots',
+                 return_value=(mocker.MagicMock(), mocker.MagicMock()))
+    mocker.patch('mplhep.histplot')
 
-    # histogram eventually calls make_local - and this does not call my mock!
+
+def test_histogram(call_make_local_hist, mock_plotting):
     df = DataFrame()
     histogram(df, bins=50, range=(0, 20))
+
+    call_make_local_hist.assert_called_once_with(df)
