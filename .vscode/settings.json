@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
         "NOQA",
+        "localds",
         "mplhep",
         "numpy",
         "pyplot",
-        "pytest"
+        "pytest",
+        "xaod"
     ]
 }
