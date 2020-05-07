@@ -1,5 +1,5 @@
 # hl_tables
- A high level tables dispatcher for putting together mulitple tables executors
+ A high level tables dispatcher for putting together multiple tables executors
 
 # Examples
 
@@ -16,6 +16,6 @@ plt.xlabel('Number of good LLPs in each event')
 plt.ylabel('a MC Sample')
 ```
 
-1. The histogram data will be calculated by the backend and returned to your local jupyter instance.
+1. The histogram data will be calculated by the backend and returned to your local Jupyter instance.
 1. Plots will be rendered!
 

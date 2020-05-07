@@ -2,7 +2,6 @@ from dataframe_expressions import DataFrame
 from typing import Tuple
 import hep_tables
 import hl_tables.local as local
-import mplhep as hep
 import matplotlib.pyplot as plt
 import numpy as np
 

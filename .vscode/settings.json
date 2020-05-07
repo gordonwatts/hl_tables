@@ -1,11 +1,20 @@
 {
     "cSpell.words": [
+        "Jupyter",
+        "LLPs",
+        "Mult",
         "NOQA",
+        "Rucio",
+        "dataset",
+        "f'localds",
         "localds",
         "mplhep",
         "numpy",
         "pyplot",
         "pytest",
-        "xaod"
+        "xaod",
+        "xlabel",
+        "ylabel",
+        "yscale"
     ]
 }
