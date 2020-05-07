@@ -1,7 +1,11 @@
-from typing import Any
+from typing import Any, List, Union
 
 from dataframe_expressions import DataFrame
-import hep_tables
+
+from .runner import runner, result
+from .servicex.xaod_runner import xaod_runner
+
+runners: List[runner] = [xaod_runner()]
 
 
 def make_local(df: DataFrame) -> Any:
@@ -9,4 +13,11 @@ def make_local(df: DataFrame) -> Any:
     Get the data from the remote system that is represented by `df` and get it here, locally, on
     this computer.
     '''
-    return hep_tables.make_local(df)
+    modified_df: Union[DataFrame, result] = df
+    for r in runners:
+        modified_df = r.process(modified_df)
+
+    if not isinstance(modified_df, result):
+        raise Exception('Unable to process data frame!')
+
+    return modified_df.result

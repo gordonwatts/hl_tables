@@ -12,6 +12,7 @@
         "numpy",
         "pyplot",
         "pytest",
+        "servicex",
         "xaod",
         "xlabel",
         "ylabel",
