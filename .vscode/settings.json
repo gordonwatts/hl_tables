@@ -5,6 +5,7 @@
         "Mult",
         "NOQA",
         "Rucio",
+        "asts",
         "dataset",
         "f'localds",
         "localds",
@@ -17,5 +18,7 @@
         "xlabel",
         "ylabel",
         "yscale"
-    ]
+    ],
+    "pyright.openFilesOnly": false,
+    "pyright.useLibraryCodeForTypes": true
 }
