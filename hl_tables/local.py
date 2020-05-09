@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, List
 
 from dataframe_expressions import DataFrame
 
@@ -13,9 +13,11 @@ def make_local(df: DataFrame) -> Any:
     Get the data from the remote system that is represented by `df` and get it here, locally, on
     this computer.
     '''
-    modified_df: Union[DataFrame, result] = df
+    modified_df = df
     for r in runners:
         modified_df = r.process(modified_df)
+        if isinstance(modified_df, result):
+            break
 
     if not isinstance(modified_df, result):
         raise Exception('Unable to process data frame!')

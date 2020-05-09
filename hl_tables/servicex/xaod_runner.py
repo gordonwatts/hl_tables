@@ -1,7 +1,9 @@
-from typing import Union, Tuple, Optional
+from typing import Union, Dict, Iterable, Optional
 import ast
 
 from dataframe_expressions import DataFrame, ast_DataFrame, Column
+from dataframe_expressions.asts import ast_Column
+from hep_tables.hep_table import xaod_table
 
 from ..runner import result, runner, ast_awkward
 import hep_tables
@@ -10,7 +12,7 @@ import hep_tables
 #       in the `hep_tables` package.
 
 
-def has_df_ref(a: ast.AST):
+def _has_df_ref(a: ast.AST):
     class find_it(ast.NodeVisitor):
         def __init__(self):
             self.seen = False
@@ -27,108 +29,184 @@ def has_df_ref(a: ast.AST):
     return f.seen
 
 
-def _can_process(a: Optional[ast.AST]) -> bool:
-    'Is this an AST we can deal with?'
-
-    # Does the ast contain a binary operation, where each side refers to an iterator?
-    # Servicex can process this, but `hep_tables` can't.
-
-    class detect_binary(ast.NodeVisitor):
-        def __init__(self):
-            self.bad_binary = False
-
-        def check_args(self, asts):
-            count = sum([1 for a in asts if has_df_ref(a)])
-            if count > 1:
-                self.bad_binary = True
-
-        def visit_BinOp(self, node: ast.BinOp):
-            self.generic_visit(node)
-            self.check_args([node.left, node.right])
-
-        def visit_Compare(self, node: ast.Compare):
-            self.generic_visit(node)
-            self.check_args([node.left] + node.comparators)
-
-    if a is None:
-        return True
-
-    d = detect_binary()
-    d.visit(a)
-    return not d.bad_binary
+def _check_for_df_ref(asts: Iterable[ast.AST]) -> bool:
+    'Anyone have more than one reference to some sort of DF?'
+    return sum([1 for a in asts if _has_df_ref(a)]) > 1
 
 
-def _process_ast(a: Optional[ast.AST], parent: DataFrame) -> Optional[ast.AST]:
-    'Process everything we can in the ast'
+class _mark(ast.NodeVisitor):
+    def __init__(self):
+        ast.NodeVisitor.__init__(self)
+        self._marks: Dict[int, bool] = {}
+        self._parent: Optional[DataFrame] = None
+        self._df_asts: Dict[int, Union[ast_DataFrame, ast_Column]] = {}
+        self._good = True
 
-    class process(ast.NodeTransformer):
-        def __init__(self, p: DataFrame):
-            self._parent = p
+    def _mark(self, a: ast.AST, is_good: bool):
+        self._marks[id(a)] = is_good
 
-        def make_local_df(self, df: DataFrame) -> ast_awkward:
-            r = hep_tables.make_local(df)
+    def lookup_mark(self, a: ast.AST) -> bool:
+        i = id(a)
+        assert i in self._marks, 'internal programming error'
+        return self._marks[i]
+
+    def _df_ast_for(self, df: DataFrame) -> ast.AST:
+        'Cache the ast dataframe object so we can track its good and bad'
+        h = id(df)
+        if h not in self._df_asts:
+            self._df_asts[h] = ast_DataFrame(df)
+        return self._df_asts[h]
+
+    def _col_ast_for(self, c: Column) -> ast.AST:
+        h = hash(c)
+        if c not in self._df_asts:
+            self._df_asts[h] = ast_Column(c)
+        return self._df_asts[h]
+
+    def visit(self, node: ast.AST):
+        'Track if this node is good or not'
+        old_good = self._good
+
+        self._good = True
+        ast.NodeVisitor.visit(self, node)
+        self._mark(node, self._good)
+
+        # If that was good, then we want the same status we came in with
+        # (be it good or bad)
+        if self._good:
+            self._good = old_good
+
+    def visit_ast_DataFrame(self, node: ast_DataFrame):
+        # Look for a top level dataframe we can't deal with.
+        df = node.dataframe
+        if df.parent is None:
+            self._good = isinstance(df, xaod_table)
+            return
+
+        # Ok - we have to go down one level here, sadly.
+        old_parent = self._parent
+        self._parent = df.parent
+
+        if df.child_expr is not None:
+            self.visit(df.child_expr)
+        else:
+            self.visit(self._df_ast_for(df.parent))
+
+        if df.filter is not None:
+            self.visit(self._col_ast_for(df.filter))
+
+        self._parent = old_parent
+
+    def visit_ast_Column(self, node: ast_Column):
+        old_parent = self._parent
+        self._parent = None
+
+        self.visit(node.column.child_expr)
+
+        self._parent = old_parent
+
+    def visit_Name(self, node: ast.Name):
+        if node.id == 'p':
+            assert self._parent is not None
+            self.visit(self._df_ast_for(self._parent))
+
+    def visit_BinOp(self, node: ast.BinOp):
+        self.generic_visit(node)
+        self._good = not _check_for_df_ref([node.left, node.right])
+
+    def visit_Compare(self, node: ast.Compare):
+        self.generic_visit(node)
+        self._good = not _check_for_df_ref([node.left] + node.comparators)
+
+
+class _transform(ast.NodeTransformer):
+    def __init__(self, m: _mark):
+        ast.NodeTransformer.__init__(self)
+        self._marker = m
+        self._parent = None
+
+    def visit_ast_DataFrame(self, node: ast_DataFrame) -> ast.AST:
+        if self._marker.lookup_mark(node):
+            r = hep_tables.make_local(node.dataframe)
             return ast_awkward(r)
+        else:
+            df = node.dataframe
 
-        def visit_Name(self, a: ast.Name):
-            if a.id == 'p':
-                return self.make_local_df(self._parent)
-            return a
+            # Ok - we have to go down one level here, sadly.
+            old_parent = self._parent
+            self._parent = df.parent
 
-        def visit_ast_DataFrame(self, a: ast_DataFrame):
-            return self.make_local_df(a.dataframe)
+            if df.child_expr is not None:
+                self.visit(df.child_expr)
+            elif df.parent is not None:
+                self.visit(self._marker._df_ast_for(df.parent))
 
-    if a is None:
-        return None
+            if df.filter is not None:
+                self.visit(self._marker._col_ast_for(df.filter))
 
-    return process(parent).visit(a)
+            self._parent = old_parent
+            return node
+
+    def visit_ast_Column(self, node: ast_Column) -> ast.AST:
+        old_parent = self._parent
+        self._parent = None
+
+        self.visit(node.column.child_expr)
+
+        self._parent = old_parent
+        return node
+
+    def visit_Name(self, node: ast.Name):
+        if node.id == 'p':
+            assert self._parent is not None
+            return self.visit(self._marker._df_ast_for(self._parent))
+        return node
+
+
+def _as_ast(df: Union[DataFrame, Column]) -> Union[ast_DataFrame, ast_Column]:
+    if isinstance(df, DataFrame):
+        return ast_DataFrame(df)
+    else:
+        return ast_Column(df)
+
+
+def _process(df: Union[DataFrame, Column]) -> Union[DataFrame, Column, result]:
+    '''
+    Process as much of the dataframe/column as we can in a two step process.
+
+    1. Mark all the nodes in the tree as executable or not
+    2. On the transition from "bad" to "good", execute the nodes.
+    '''
+    # Mark everything in the tree as either being "good" or bad.
+    marker = _mark()
+    top_level_ast = _as_ast(df)
+    marker.visit(top_level_ast)
+
+    # Run the transformation to see what we can actually convert.
+    t = _transform(marker)
+    r = t.visit(top_level_ast)
+
+    if isinstance(r, ast_Column):
+        return r.column
+    elif isinstance(r, ast_DataFrame):
+        return r.dataframe
+    elif isinstance(r, ast_awkward):
+        return result(r.awkward)
+    else:
+        assert False, 'should never return something arbitrary!'
 
 
 class xaod_runner(runner):
     '''
     We can do a xaod on servicex
     '''
-    def _process_by_depth(self, df: Union[DataFrame, Column]) \
-            -> Tuple[bool, Union[DataFrame, Column, result]]:
-        'Process by depth'
-
-        # Lets do the really easy thing first - what happens when we are at the bottom.
-        if isinstance(df, DataFrame):
-            if df.parent is None:
-                assert df.child_expr is None, 'Internal Programming Error'
-                return (isinstance(df, hep_tables.xaod_table), df)
-
-            # Lets see if the parent can be processed. If not, then we just continue
-            # to return false.
-            can_process, modified_df = self._process_by_depth(df.parent)
-            if not can_process:
-                df.parent = modified_df
-                return (can_process, df)
-
-            # Parent can be processed. This is great. Lets check if the child expression
-            # can be processed.
-            if not _can_process(df.child_expr) or not _can_process(df.filter):
-                # Process everything in the expression we can
-                new_child = _process_ast(df.child_expr, df.parent)
-                new_filter = _process_ast(df.filter, df.parent)
-                df.child_expr = new_child
-                df.filter = new_filter
-                return (False, df)
-
-            return (True, df)
-        elif isinstance(df, Column):
-            if not _can_process(df.child_expr):
-                df.child_expr = _process_ast(df.child_expr, None)
-                return (False, df)
-            return (True, df)
-        else:
-            raise Exception('Internal programing error')
-
-    def process(self, df: DataFrame) -> Union[DataFrame, result]:
+    def process(self, df: DataFrame) -> Union[DataFrame, Column, result]:
         'Process as much of the tree as we can process'
-        can_process, modified_df = self._process_by_depth(df)
+        return _process(df)
+        # can_process, modified_df = _process_by_depth(df)
 
-        if not can_process:
-            return modified_df
-        else:
-            r = hep_tables.make_local(df)
-            return result(r)
+        # if not can_process:
+        #     return modified_df
+        # else:
+        #     r = hep_tables.make_local(df)
+        #     return result(r)

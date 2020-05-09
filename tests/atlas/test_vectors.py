@@ -33,6 +33,7 @@ def test_3v_x():
     v1 = a_3v(df)
     df1 = v1.x
     assert df1 is not None
+    assert df1.child_expr is not None
     assert ast.dump(df1.child_expr) == "Attribute(value=Name(id='p', ctx=Load()), " \
                                        "attr='x', ctx=Load())"
 
@@ -44,8 +45,10 @@ def test_3v_add_x():
     r = v1 + v2
     df1 = r.x
     assert df1 is not None
+    assert df1.child_expr is not None
     assert ast.dump(df1.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
                                        "op=Add(), right=ast_DataFrame())"
+    assert df1.parent.child_expr is not None
     assert ast.dump(df1.parent.child_expr) == "Attribute(value=Name(id='p', ctx=Load()), " \
                                               "attr='x', ctx=Load())"
 
@@ -54,12 +57,16 @@ def test_3v_xy():
     df = DataFrame()
     v1 = a_3v(df)
     df1 = v1.xy
+    assert df1.child_expr is not None
     assert ast.dump(df1.child_expr) == "Call(func=Attribute(value=Name(id='p', ctx=Load())," \
                                        " attr='sqrt', ctx=Load()), args=[], keywords=[])"
+    assert df1.parent.child_expr is not None
     assert ast.dump(df1.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
                                               "op=Add(), right=ast_DataFrame())"
+    assert df1.parent.parent.child_expr is not None
     assert ast.dump(df1.parent.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
                                                      "op=Mult(), right=ast_DataFrame())"
+    assert df1.parent.parent.parent.child_expr is not None
     assert ast.dump(df1.parent.parent.parent.child_expr) == \
         "Attribute(value=Name(id='p', ctx=Load()), attr='x', ctx=Load())"
 
@@ -70,13 +77,18 @@ def test_3v_add_xy():
     v2 = a_3v(df)
     r = v1 + v2
     df1 = r.xy
+    assert df1.child_expr is not None
     assert ast.dump(df1.child_expr) == "Call(func=Attribute(value=Name(id='p', ctx=Load())," \
                                        " attr='sqrt', ctx=Load()), args=[], keywords=[])"
+    assert df1.parent.child_expr is not None
     assert ast.dump(df1.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
                                               "op=Add(), right=ast_DataFrame())"
+    assert df1.parent.parent.child_expr is not None
     assert ast.dump(df1.parent.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
                                                      "op=Mult(), right=ast_DataFrame())"
+    assert df1.parent.parent.parent.child_expr is not None
     assert ast.dump(df1.parent.parent.parent.child_expr) == \
         "BinOp(left=Name(id='p', ctx=Load()), op=Add(), right=ast_DataFrame())"
+    assert df1.parent.parent.parent.parent.child_expr is not None
     assert ast.dump(df1.parent.parent.parent.parent.child_expr) == \
         "Attribute(value=Name(id='p', ctx=Load()), attr='x', ctx=Load())"
