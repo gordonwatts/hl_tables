@@ -131,3 +131,14 @@ def test_split_in_sqrt(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
     assert isinstance(r.child_expr, ast.Call)
+
+
+def test_split_in_sqrt_with_divide(good_xaod, hep_tables_make_local_call):  # NOQA
+    x = xaod_runner()
+    import numpy as np
+    df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y)/1000.0)
+    r = x.process(df1)
+    assert r is not None
+    assert isinstance(r, DataFrame)
+    assert hep_tables_make_local_call.call_count == 2
+    assert isinstance(r.child_expr, ast.BinOp)

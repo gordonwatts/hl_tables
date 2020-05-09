@@ -12,7 +12,7 @@ class inline_executor(ast.NodeTransformer):
     'Inline execute'
 
     def visit(self, node: ast.AST) -> ast.AST:
-        if isinstance(node, (ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div)):
+        if isinstance(node, (ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Num)):
             return node
 
         a = ast.NodeTransformer.visit(self, node)
@@ -50,11 +50,8 @@ class inline_executor(ast.NodeTransformer):
     def visit_BinOp(self, r: ast.BinOp) -> ast.AST:
         # If this isn't in the right format, there isn't much we can do.
         node = self.generic_visit(r)
-        if not (isinstance(node.left, ast_awkward) and isinstance(node.right, ast_awkward)):
-            return r
-
-        o1 = node.left.awkward
-        o2 = node.right.awkward
+        o1 = node.left.awkward if isinstance(node.left, ast_awkward) else ast.literal_eval(node.left)
+        o2 = node.left.awkward if isinstance(node.right, ast_awkward) else ast.literal_eval(node.right)
 
         if isinstance(node.op, ast.Add):
             return ast_awkward(o1 + o2)

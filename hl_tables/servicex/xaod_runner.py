@@ -63,6 +63,11 @@ class _mark(ast.NodeVisitor):
             self._df_asts[h] = ast_Column(c)
         return self._df_asts[h]
 
+    def _update_good(self, is_good: bool):
+        'Only update good if we are still positive'
+        if self._good:
+            self._good = is_good
+
     def visit(self, node: ast.AST):
         'Track if this node is good or not'
         old_good = self._good
@@ -73,8 +78,7 @@ class _mark(ast.NodeVisitor):
 
         # If that was good, then we want the same status we came in with
         # (be it good or bad)
-        if self._good:
-            self._good = old_good
+        self._update_good(old_good)
 
     def visit_ast_DataFrame(self, node: ast_DataFrame):
         # Look for a top level dataframe we can't deal with.
@@ -112,11 +116,11 @@ class _mark(ast.NodeVisitor):
 
     def visit_BinOp(self, node: ast.BinOp):
         self.generic_visit(node)
-        self._good = not _check_for_df_ref([node.left, node.right])
+        self._update_good(not _check_for_df_ref([node.left, node.right]))
 
     def visit_Compare(self, node: ast.Compare):
         self.generic_visit(node)
-        self._good = not _check_for_df_ref([node.left] + node.comparators)
+        self._update_good(not _check_for_df_ref([node.left] + node.comparators))
 
 
 class _transform(ast.NodeTransformer):
