@@ -4,8 +4,9 @@ from dataframe_expressions import DataFrame
 
 from .runner import runner, result
 from .servicex.xaod_runner import xaod_runner
+from .awkward.awkward_runner import awkward_runner
 
-runners: List[runner] = [xaod_runner()]
+runners: List[runner] = [xaod_runner(), awkward_runner()]
 
 
 def make_local(df: DataFrame) -> Any:
