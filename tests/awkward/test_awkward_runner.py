@@ -16,6 +16,11 @@ def awk_arr():
 
 
 @pytest.fixture()
+def awk_arr_onelevel():
+    n1 = awkward.fromiter([1, 2, 3, 4])
+    return n1
+
+@pytest.fixture()
 def awk_arr_pair():
     n1 = awkward.fromiter([[1.1, 2.2, 3.3], [], [4.4, 5.5], [6.6], [7.7, 8.8, 9.9]])
     n2 = awkward.fromiter([[1.1, 2.2, 3.3], [], [4.4, 5.5], [6.6], [7.7, 8.8, 9.9]])
@@ -168,3 +173,46 @@ def test_histogram(awk_arr_pair):
     r = xr.process(histogram(df1, bins=50, range=(0, 20)))
 
     assert isinstance(r, result)
+
+
+def test_count(awk_arr):
+    df = DataFrame()
+    df1 = df.Count()
+
+    n1 = awk_arr
+
+    assert df1.parent is not None
+    assert isinstance(df1.child_expr, ast.Call)
+    assert isinstance(df1.child_expr.func, ast.Attribute)
+    df1.child_expr.func.value = ast_awkward(n1)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 5
+    assert a[0] == 3
+    assert a[1] == 0
+    assert a[2] == 2
+
+
+def test_count_toplevel(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df.Count()
+
+    n1 = awk_arr_onelevel
+
+    assert df1.parent is not None
+    assert isinstance(df1.child_expr, ast.Call)
+    assert isinstance(df1.child_expr.func, ast.Attribute)
+    df1.child_expr.func.value = ast_awkward(n1)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert a == 4

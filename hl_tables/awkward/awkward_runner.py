@@ -38,6 +38,11 @@ class inline_executor(ast.NodeTransformer):
 
         if node.func.attr == 'sqrt':
             return ast_awkward(np.sqrt(o))
+        elif node.func.attr == 'Count':
+            if isinstance(o, np.ndarray):
+                return ast_awkward(len(o))
+            else:
+                return ast_awkward(o.count())
         elif node.func.attr == 'histogram':
             if hasattr(o, 'flatten'):
                 o = o.flatten()
