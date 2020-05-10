@@ -216,3 +216,39 @@ def test_count_toplevel(awk_arr_onelevel):
     a = r.result
     assert a is not None
     assert a == 4
+
+
+def test_compare_single_number_eq(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df == 2
+
+    assert isinstance(df1.child_expr, ast.Compare)
+    df1.child_expr.left = ast_awkward(awk_arr_onelevel)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 4
+    assert sum(a) == 1
+    assert a[1]
+    assert not a[0]
+
+
+def test_compare_single_number_eq_two(awk_arr):
+    df = DataFrame()
+    df1 = df == 1.1
+
+    assert isinstance(df1.child_expr, ast.Compare)
+    df1.child_expr.left = ast_awkward(awk_arr)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert sum(a.flatten()) == 1
+    assert a[0][0]

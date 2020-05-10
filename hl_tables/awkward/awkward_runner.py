@@ -69,6 +69,22 @@ class inline_executor(ast.NodeTransformer):
         else:
             return r
 
+    def visit_Compare(self, node: ast.Compare) -> ast.AST:
+        assert len(node.comparators) == 1, 'Internal error - cannot do compare of more complex than 2 operands'
+        left = self.visit(node.left)
+        right = self.visit(node.comparators[0])
+
+        if not isinstance(left, ast_awkward):
+            return node
+        o = left.awkward
+
+        r_value = ast.literal_eval(right)
+
+        if isinstance(node.ops[0], ast.Eq):
+            return ast_awkward(o == r_value)
+        else:
+            return node
+
 
 class awkward_runner(runner):
     '''
