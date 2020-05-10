@@ -252,3 +252,25 @@ def test_compare_single_number_eq_two(awk_arr):
     assert a is not None
     assert sum(a.flatten()) == 1
     assert a[0][0]
+
+
+def test_filter_simple(awk_arr):
+    df = DataFrame()
+    df1 = df[df == 3.3]
+
+    n1 = awk_arr
+
+    assert isinstance(df1.filter.child_expr, ast.Compare)
+    df1.filter.child_expr.left = ast_awkward(awk_arr)
+
+    df1.child_expr = ast_awkward(awk_arr)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+
+    assert len(a) == 5
+    assert len(a.flatten()) == 1

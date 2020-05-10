@@ -2,7 +2,7 @@ import ast
 import logging
 from typing import Union
 
-from dataframe_expressions import Column, DataFrame, render
+from dataframe_expressions import Column, DataFrame, render, ast_Filter
 import numpy as np
 
 from ..runner import ast_awkward, result, runner
@@ -84,6 +84,17 @@ class inline_executor(ast.NodeTransformer):
             return ast_awkward(o == r_value)
         else:
             return node
+
+    def visit_ast_Filter(self, node: ast_Filter) -> ast.AST:
+        expr = self.visit(node.expr)
+        filter = self.visit(node.filter)
+
+        if not isinstance(expr, ast_awkward):
+            return node
+        if not isinstance(filter, ast_awkward):
+            return node
+
+        return ast_awkward(expr.awkward[filter.awkward])
 
 
 class awkward_runner(runner):
