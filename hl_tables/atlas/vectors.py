@@ -18,7 +18,11 @@ class op_bin(op_base):
         self._op = op
 
     def render(self, f: Callable[[_atlas_3v], Any]) -> Any:
-        return self._a.render(f) + self._b.render(f)
+        if self._op == '+':
+            return self._a.render(f) + self._b.render(f)
+        elif self._op == '-':
+            return self._a.render(f) - self._b.render(f)
+        assert False, f'Unknown vector operation {self._op}'
 
 
 class op_vec(op_base):

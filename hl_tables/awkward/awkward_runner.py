@@ -12,7 +12,7 @@ class inline_executor(ast.NodeTransformer):
     'Inline execute'
 
     def visit(self, node: ast.AST) -> ast.AST:
-        if isinstance(node, (ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Num)):
+        if isinstance(node, (ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Num, ast.Eq)):
             return node
 
         a = ast.NodeTransformer.visit(self, node)

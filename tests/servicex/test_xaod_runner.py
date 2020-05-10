@@ -98,6 +98,24 @@ def test_split_call_compare(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(a.comparators[0], ast_awkward)
 
 
+def test_split_double(good_xaod, hep_tables_make_local_call):  # NOQA
+    x = xaod_runner()
+    df1 = good_xaod.x + good_xaod.y
+    r = x.process(df1[df1 < 20])
+    assert r is not None
+    assert isinstance(r, DataFrame)
+    assert hep_tables_make_local_call.call_count == 2
+
+
+def test_split_double_count(good_xaod, hep_tables_make_local_call):  # NOQA
+    x = xaod_runner()
+    df1 = good_xaod.x + good_xaod.y
+    r = x.process(df1[df1 < 20].Count())
+    assert r is not None
+    assert isinstance(r, DataFrame)
+    assert hep_tables_make_local_call.call_count == 2
+
+
 def test_split_call_good_filter(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     ok_events = good_xaod[good_xaod.x > 10]
@@ -159,3 +177,28 @@ def test_run_twice(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(a, ast.BinOp)
     assert isinstance(a.left, ast_awkward)
     assert isinstance(a.right, ast_awkward)
+
+
+def test_run_mapseq(good_xaod, hep_tables_make_local_call):  # NOQA
+    from hl_tables.atlas import a_3v
+    truth = good_xaod.TruthParticles('TruthParticles')
+    llp_truth = truth[truth.pdgId == 35]
+    llp_good_truth = llp_truth[llp_truth.hasProdVtx & llp_truth.hasDecayVtx]
+    l_prod = a_3v(llp_good_truth.prodVtx)
+    l_decay = a_3v(llp_good_truth.decayVtx)
+    lxy = (l_decay-l_prod).xy
+    lxy_2 = lxy[lxy.Count() == 2]
+    has_1muon = lxy_2[lxy_2.mapseq(lambda s: s[0] > 1 | s[1] < 2)].Count()
+
+    x = xaod_runner()
+    r = x.process(has_1muon)
+
+    assert isinstance(r, DataFrame)
+
+    all_args = hep_tables_make_local_call.call_args_list
+    for a in all_args:
+        d = a[0][0]
+        from dataframe_expressions import render
+        r, _ = render(d)
+        print(ast.dump(r))
+    assert len(all_args) == 4
