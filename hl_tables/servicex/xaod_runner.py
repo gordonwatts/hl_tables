@@ -1,5 +1,6 @@
 from typing import Union, Dict, Iterable, Optional
 import ast
+import copy
 
 from dataframe_expressions import DataFrame, ast_DataFrame, Column
 from dataframe_expressions.asts import ast_Column
@@ -183,7 +184,8 @@ def _process(df: Union[DataFrame, Column]) -> Union[DataFrame, Column, result]:
     '''
     # Mark everything in the tree as either being "good" or bad.
     marker = _mark()
-    top_level_ast = _as_ast(df)
+    deep_df = copy.deepcopy(df)
+    top_level_ast = _as_ast(deep_df)
     marker.visit(top_level_ast)
 
     # Run the transformation to see what we can actually convert.

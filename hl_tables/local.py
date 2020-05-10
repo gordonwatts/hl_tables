@@ -1,4 +1,5 @@
 from typing import Any, List
+import copy
 
 from dataframe_expressions import DataFrame
 

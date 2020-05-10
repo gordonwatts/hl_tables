@@ -25,7 +25,7 @@ def test_with_nothing(hep_tables_make_local_call):  # NOQA
     df = DataFrame()
     x = xaod_runner()
     r = x.process(df)
-    assert r is df
+    assert isinstance(r, DataFrame)
     hep_tables_make_local_call.assert_not_called()
 
 
@@ -35,7 +35,7 @@ def test_with_nothing_deeper(hep_tables_make_local_call):  # NOQA
     df1 = df[df.x > 10].y
     x = xaod_runner()
     r = x.process(df1)
-    assert r is df1
+    assert isinstance(r, DataFrame)
     hep_tables_make_local_call.assert_not_called()
 
 
@@ -142,3 +142,20 @@ def test_split_in_sqrt_with_divide(good_xaod, hep_tables_make_local_call):  # NO
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
     assert isinstance(r.child_expr, ast.BinOp)
+
+
+def test_run_twice(good_xaod, hep_tables_make_local_call):  # NOQA
+    x = xaod_runner()
+    ok_events = good_xaod[good_xaod.x > 10]
+    df1 = ok_events.x + ok_events.y
+    _ = x.process(df1)
+
+    r2 = x.process(df1)
+
+    assert r2 is not None
+    assert isinstance(r2, DataFrame)
+    assert hep_tables_make_local_call.call_count == 4
+    a = r2.child_expr
+    assert isinstance(a, ast.BinOp)
+    assert isinstance(a.left, ast_awkward)
+    assert isinstance(a.right, ast_awkward)
