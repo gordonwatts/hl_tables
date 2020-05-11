@@ -2,14 +2,36 @@ import ast
 import logging
 from typing import Union
 
-from dataframe_expressions import Column, DataFrame, render, ast_Filter
+from dataframe_expressions import (
+    Column,
+    DataFrame,
+    ast_Callable,
+    ast_DataFrame,
+    ast_Filter,
+    render,
+    render_callable,
+    render_context,
+)
 import numpy as np
 
 from ..runner import ast_awkward, result, runner
 
 
+def _replace_dataframe(source: ast.AST, df: DataFrame, replacement: ast.AST):
+    class rep(ast.NodeTransformer):
+        def visit_ast_DataFrame(self, node: ast_DataFrame):
+            if node.dataframe is df:
+                return replacement
+            return node
+
+    return rep().visit(source)
+
+
 class inline_executor(ast.NodeTransformer):
     'Inline execute'
+    def __init__(self, context: render_context):
+        ast.NodeTransformer.__init__(self)
+        self._context = context
 
     def visit(self, node: ast.AST) -> ast.AST:
         if isinstance(node, (ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Num, ast.Eq)):
@@ -21,6 +43,26 @@ class inline_executor(ast.NodeTransformer):
                 .getLogger(__name__) \
                 .warning(f'Unable to awkward array calculate {ast.dump(node)}')
         return a
+
+    def call_mapseq(self, node: ast.Call) -> ast.AST:
+        assert len(node.args) == 1, 'mapseq takes only one argument'
+        c_func = node.args[0]
+        assert isinstance(c_func, ast_Callable)
+        value = node.func.value
+        assert isinstance(value, ast_awkward)
+
+        # Generate the expression using a dataframe ast to get generic behavior
+        # Replace it with the awkward array in the end
+        a = DataFrame()
+        df_expr, new_context = render_callable(c_func, self._context, a)
+        expr = _replace_dataframe(df_expr, a, value)
+
+        # Just run it through this processor to continue the evaluation.
+        old_context, self._context = self._context, new_context
+        try:
+            return self.visit(expr)
+        finally:
+            self._context = old_context
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
         if node is None:
@@ -49,6 +91,8 @@ class inline_executor(ast.NodeTransformer):
             kwargs = {n.arg: ast.literal_eval(n.value) for n in node.keywords}
             hist_info = np.histogram(o, **kwargs)
             return ast_awkward(hist_info)
+        elif node.func.attr == 'mapseq':
+            return self.call_mapseq(node)
         else:
             return node
 
@@ -96,6 +140,28 @@ class inline_executor(ast.NodeTransformer):
 
         return ast_awkward(expr.awkward[filter.awkward])
 
+    def visit_Subscript(self, node: ast.Subscript):
+        assert isinstance(node.value, ast_awkward)
+        a = node.value.awkward
+        assert isinstance(node.slice, ast.Index)
+        index = node.slice.value
+
+        return ast_awkward(a[..., index])
+
+    def visit_BoolOp(self, node: ast.BoolOp):
+        assert len(node.values) == 2, 'Can only do simple binary operator compares'
+        left = self.visit(node.values[0])
+        right = self.visit(node.values[1])
+        assert isinstance(left, ast_awkward)
+        assert isinstance(right, ast_awkward)
+
+        if isinstance(node.op, ast.And):
+            return ast_awkward(left.awkward & right.awkward)
+        elif isinstance(node.op, ast.Or):
+            return ast_awkward(left.awkward | right.awkward)
+
+        return node
+
 
 class awkward_runner(runner):
     '''
@@ -105,9 +171,9 @@ class awkward_runner(runner):
         'Process as much of the tree as we can process'
 
         # Render it into an ast that we can now process!
-        r, _ = render(df)
+        r, context = render(df)
 
-        calc = inline_executor().visit(r)
+        calc = inline_executor(context).visit(r)
 
         if isinstance(calc, ast_awkward):
             return result(calc.awkward)

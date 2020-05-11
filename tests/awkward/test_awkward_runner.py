@@ -16,6 +16,10 @@ def awk_arr():
 
 
 @pytest.fixture()
+def awk_arr_uniform():
+    return awkward.fromiter([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
+
+@pytest.fixture()
 def awk_arr_onelevel():
     n1 = awkward.fromiter([1, 2, 3, 4])
     return n1
@@ -274,3 +278,61 @@ def test_filter_simple(awk_arr):
 
     assert len(a) == 5
     assert len(a.flatten()) == 1
+
+
+def test_mapseq_index_filter(awk_arr_uniform):
+    df = DataFrame()
+    df1 = df.mapseq(lambda s: s[0] == 3.3)
+
+    df1.child_expr.func.value = ast_awkward(awk_arr_uniform)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+
+    assert len(a) == 3
+    assert len(a.flatten()) == 3
+    assert sum(a.flatten()) == 1
+    assert a[1]
+
+
+def test_mapseq_index_filter_with_and(awk_arr_uniform):
+    df = DataFrame()
+    df1 = df.mapseq(lambda s: (s[0] == 3.3) & (s[1] == 4.4))
+
+    df1.child_expr.func.value = ast_awkward(awk_arr_uniform)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+
+    assert len(a) == 3
+    assert len(a.flatten()) == 3
+    assert sum(a.flatten()) == 1
+    assert a[1]
+
+
+def test_mapseq_index_filter_with_or(awk_arr_uniform):
+    df = DataFrame()
+    df1 = df.mapseq(lambda s: (s[0] == 3.3) | (s[1] == 6.6))
+
+    df1.child_expr.func.value = ast_awkward(awk_arr_uniform)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+
+    assert len(a) == 3
+    assert len(a.flatten()) == 3
+    assert sum(a.flatten()) == 2
+    assert a[1]
+    assert a[2]
