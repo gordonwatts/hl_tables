@@ -44,12 +44,12 @@ class inline_executor(ast.NodeTransformer):
                 .warning(f'Unable to awkward array calculate {ast.dump(node)}')
         return a
 
-    def call_mapseq(self, node: ast.Call) -> ast.AST:
+    def call_mapseq(self, node: ast.Call, value: ast_awkward) -> ast.AST:
         assert len(node.args) == 1, 'mapseq takes only one argument'
         c_func = node.args[0]
-        assert isinstance(c_func, ast_Callable)
-        value = node.func.value
-        assert isinstance(value, ast_awkward)
+        if not isinstance(c_func, ast_Callable):
+            print('func is not callable')
+            return node
 
         # Generate the expression using a dataframe ast to get generic behavior
         # Replace it with the awkward array in the end
@@ -60,7 +60,12 @@ class inline_executor(ast.NodeTransformer):
         # Just run it through this processor to continue the evaluation.
         old_context, self._context = self._context, new_context
         try:
-            return self.visit(expr)
+            print("going to visit expr")
+            e = self.visit(expr)
+            if not isinstance(e, ast_awkward):
+                print(f'mapseq eval failure: {ast.dump(expr)}')
+                print(f'mapseq eval got back: {ast.dump(e)}')
+            return e
         finally:
             self._context = old_context
 
@@ -92,7 +97,7 @@ class inline_executor(ast.NodeTransformer):
             hist_info = np.histogram(o, **kwargs)
             return ast_awkward(hist_info)
         elif node.func.attr == 'mapseq':
-            return self.call_mapseq(node)
+            return self.call_mapseq(node, r)
         else:
             return node
 
@@ -126,8 +131,18 @@ class inline_executor(ast.NodeTransformer):
 
         if isinstance(node.ops[0], ast.Eq):
             return ast_awkward(o == r_value)
-        else:
-            return node
+        elif isinstance(node.ops[0], ast.NotEq):
+            return ast_awkward(o != r_value)
+        elif isinstance(node.ops[0], ast.Gt):
+            return ast_awkward(o > r_value)
+        elif isinstance(node.ops[0], ast.Lt):
+            return ast_awkward(o < r_value)
+        elif isinstance(node.ops[0], ast.GtE):
+            return ast_awkward(o >= r_value)
+        elif isinstance(node.ops[0], ast.LtE):
+            return ast_awkward(o <= r_value)
+
+        return node
 
     def visit_ast_Filter(self, node: ast_Filter) -> ast.AST:
         expr = self.visit(node.expr)
@@ -141,9 +156,11 @@ class inline_executor(ast.NodeTransformer):
         return ast_awkward(expr.awkward[filter.awkward])
 
     def visit_Subscript(self, node: ast.Subscript):
-        assert isinstance(node.value, ast_awkward)
+        if not isinstance(node.value, ast_awkward):
+            return node
         a = node.value.awkward
-        assert isinstance(node.slice, ast.Index)
+        if not isinstance(node.slice, ast.Index):
+            return node
         index = node.slice.value
 
         return ast_awkward(a[..., index])

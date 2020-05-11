@@ -241,6 +241,101 @@ def test_compare_single_number_eq(awk_arr_onelevel):
     assert not a[0]
 
 
+def test_compare_single_number_ne(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df != 2
+
+    assert isinstance(df1.child_expr, ast.Compare)
+    df1.child_expr.left = ast_awkward(awk_arr_onelevel)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 4
+    assert sum(a) == 3
+    assert not a[1]
+    assert a[0]
+
+
+def test_compare_single_number_gt(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df > 2
+
+    assert isinstance(df1.child_expr, ast.Compare)
+    df1.child_expr.left = ast_awkward(awk_arr_onelevel)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 4
+    assert sum(a) == 2
+    assert a[3]
+    assert not a[0]
+
+
+def test_compare_single_number_lt(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df < 2
+
+    assert isinstance(df1.child_expr, ast.Compare)
+    df1.child_expr.left = ast_awkward(awk_arr_onelevel)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 4
+    assert sum(a) == 1
+    assert a[0]
+    assert not a[3]
+
+
+def test_compare_single_number_ge(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df >= 2
+
+    assert isinstance(df1.child_expr, ast.Compare)
+    df1.child_expr.left = ast_awkward(awk_arr_onelevel)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 4
+    assert sum(a) == 3
+    assert a[1]
+    assert not a[0]
+
+
+def test_compare_single_number_le(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df <= 2
+
+    assert isinstance(df1.child_expr, ast.Compare)
+    df1.child_expr.left = ast_awkward(awk_arr_onelevel)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 4
+    assert sum(a) == 2
+    assert a[1]
+    assert not a[3]
+
+
 def test_compare_single_number_eq_two(awk_arr):
     df = DataFrame()
     df1 = df == 1.1
@@ -297,6 +392,26 @@ def test_mapseq_index_filter(awk_arr_uniform):
     assert len(a.flatten()) == 3
     assert sum(a.flatten()) == 1
     assert a[1]
+
+
+def test_mapseq_eval_parent(awk_arr_uniform):
+    df = DataFrame()
+    df1 = df+1.0
+    df2 = df1.mapseq(lambda s: s[1] == 3.2)
+
+    df1.child_expr.left = ast_awkward(awk_arr_uniform)
+
+    xr = awkward_runner()
+    r = xr.process(df2)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+
+    assert len(a) == 3
+    assert len(a.flatten()) == 3
+    assert sum(a.flatten()) == 1
+    assert a[0]
 
 
 def test_mapseq_index_filter_with_and(awk_arr_uniform):
