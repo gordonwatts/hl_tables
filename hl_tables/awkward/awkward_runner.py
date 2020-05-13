@@ -48,7 +48,6 @@ class inline_executor(ast.NodeTransformer):
         assert len(node.args) == 1, 'mapseq takes only one argument'
         c_func = node.args[0]
         if not isinstance(c_func, ast_Callable):
-            print('func is not callable')
             return node
 
         # Generate the expression using a dataframe ast to get generic behavior
@@ -60,14 +59,37 @@ class inline_executor(ast.NodeTransformer):
         # Just run it through this processor to continue the evaluation.
         old_context, self._context = self._context, new_context
         try:
-            print("going to visit expr")
             e = self.visit(expr)
-            if not isinstance(e, ast_awkward):
-                print(f'mapseq eval failure: {ast.dump(expr)}')
-                print(f'mapseq eval got back: {ast.dump(e)}')
             return e
         finally:
             self._context = old_context
+
+    def call_Count(self, node: ast.Call, value: ast_awkward) -> ast.AST:
+        # is there an axis argument?
+        axis = -1
+        for a in node.keywords:
+            if a.arg == 'axis':
+                axis = ast.literal_eval(a.value)
+            else:
+                raise Exception(f'Argument {a.arg} is not allowed for Count')
+
+        if isinstance(value.awkward, np.ndarray):
+            if axis < 0:
+                axis = len(value.awkward.shape) - 1
+            if axis > len(value.awkward.shape):
+                raise Exception(f'Unable to get axis {axis} of numpy ndarray '
+                                f'with shape {value.awkward.shape}.')
+            if len(value.awkward.shape[:axis]) == 0:
+                return ast_awkward(value.awkward.shape[axis])
+            else:
+                return ast_awkward(np.full(value.awkward.shape[:axis], value.awkward.shape[axis]))
+        else:
+            if axis == 0:
+                return ast_awkward(len(value.awkward))
+            if axis == -1:
+                return ast_awkward(value.awkward.count())
+            # We don't know how to do anything else!
+            return node
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
         if node is None:
@@ -86,10 +108,7 @@ class inline_executor(ast.NodeTransformer):
         if node.func.attr == 'sqrt':
             return ast_awkward(np.sqrt(o))
         elif node.func.attr == 'Count':
-            if isinstance(o, np.ndarray):
-                return ast_awkward(len(o))
-            else:
-                return ast_awkward(o.count())
+            return self.call_Count(node, r)
         elif node.func.attr == 'histogram':
             if hasattr(o, 'flatten'):
                 o = o.flatten()

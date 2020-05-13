@@ -202,6 +202,50 @@ def test_count(awk_arr):
     assert a[2] == 2
 
 
+def test_count_axis_0(awk_arr_uniform):
+    df = DataFrame()
+    df1 = df.Count(axis=0)
+
+    n1 = awk_arr_uniform
+
+    assert df1.parent is not None
+    assert isinstance(df1.child_expr, ast.Call)
+    assert isinstance(df1.child_expr.func, ast.Attribute)
+    df1.child_expr.func.value = ast_awkward(n1)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert isinstance(a, int)
+    assert a == 3
+
+
+def test_count_axis_last(awk_arr_uniform):
+    df = DataFrame()
+    df1 = df.Count(axis=-1)
+
+    n1 = awk_arr_uniform
+
+    assert df1.parent is not None
+    assert isinstance(df1.child_expr, ast.Call)
+    assert isinstance(df1.child_expr.func, ast.Attribute)
+    df1.child_expr.func.value = ast_awkward(n1)
+
+    xr = awkward_runner()
+    r = xr.process(df1)
+
+    assert isinstance(r, result)
+    a = r.result
+    assert a is not None
+    assert len(a) == 3
+    assert a[0] == 2
+    assert a[1] == 2
+    assert a[2] == 2
+
+
 def test_count_toplevel(awk_arr_onelevel):
     df = DataFrame()
     df1 = df.Count()
@@ -220,6 +264,24 @@ def test_count_toplevel(awk_arr_onelevel):
     a = r.result
     assert a is not None
     assert a == 4
+
+
+def test_count_toplevel_axis_4(awk_arr_onelevel):
+    df = DataFrame()
+    df1 = df.Count(axis=4)
+
+    n1 = awk_arr_onelevel
+
+    assert df1.parent is not None
+    assert isinstance(df1.child_expr, ast.Call)
+    assert isinstance(df1.child_expr.func, ast.Attribute)
+    df1.child_expr.func.value = ast_awkward(n1)
+
+    xr = awkward_runner()
+    with pytest.raises(Exception) as e:
+        xr.process(df1)
+
+    assert "axis" in str(e.value)
 
 
 def test_compare_single_number_eq(awk_arr_onelevel):
