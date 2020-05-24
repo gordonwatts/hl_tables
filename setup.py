@@ -27,7 +27,6 @@ setup(name="hl_tables",
       test_suite="tests",
       install_requires=[
           # "hep_tables",
-          "mplhep",
       ],
       extras_require=extras_require,
       classifiers=[

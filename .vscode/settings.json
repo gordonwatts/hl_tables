@@ -6,6 +6,8 @@
         "NOQA",
         "Rucio",
         "asts",
+        "asyncio",
+        "atrans",
         "dataset",
         "f'localds",
         "localds",
@@ -20,5 +22,6 @@
         "yscale"
     ],
     "pyright.openFilesOnly": false,
-    "pyright.useLibraryCodeForTypes": true
+    "python.analysis.diagnosticMode": "workspace",
+    "python.pythonPath": "i:\\gwatts\\Code\\irishep\\hl_tables\\.venv\\Scripts\\python.exe"
 }
