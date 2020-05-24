@@ -25,9 +25,10 @@ class awkward_DataFrame(DataFrame):
 
 
 class ast_awkward(ast.AST):
+    _fields = ('awkward', )
+
     def __init__(self, a: Any):
         self.awkward = a
-        self._fields = ('awkward', )
 
 
 class runner:

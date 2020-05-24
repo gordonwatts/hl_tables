@@ -1,3 +1,4 @@
+# type: ignore
 import ast
 from hl_tables.runner import ast_awkward, result
 from hep_tables import histogram
@@ -19,10 +20,12 @@ def awk_arr():
 def awk_arr_uniform():
     return awkward.fromiter([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
 
+
 @pytest.fixture()
 def awk_arr_onelevel():
     n1 = awkward.fromiter([1, 2, 3, 4])
     return n1
+
 
 @pytest.fixture()
 def awk_arr_pair():
@@ -418,8 +421,6 @@ def test_compare_single_number_eq_two(awk_arr):
 def test_filter_simple(awk_arr):
     df = DataFrame()
     df1 = df[df == 3.3]
-
-    n1 = awk_arr
 
     assert isinstance(df1.filter.child_expr, ast.Compare)
     df1.filter.child_expr.left = ast_awkward(awk_arr)

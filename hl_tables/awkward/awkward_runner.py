@@ -1,6 +1,6 @@
 import ast
 import logging
-from typing import Union
+from typing import Union, cast
 
 from dataframe_expressions import (
     Column,
@@ -53,7 +53,7 @@ class inline_executor(ast.NodeTransformer):
         # Generate the expression using a dataframe ast to get generic behavior
         # Replace it with the awkward array in the end
         a = DataFrame()
-        df_expr, new_context = render_callable(c_func, self._context, a)
+        df_expr, new_context = render_callable(cast(ast_Callable, c_func), self._context, a)
         expr = _replace_dataframe(df_expr, a, value)
 
         # Just run it through this processor to continue the evaluation.
@@ -123,8 +123,13 @@ class inline_executor(ast.NodeTransformer):
     def visit_BinOp(self, r: ast.BinOp) -> ast.AST:
         # If this isn't in the right format, there isn't much we can do.
         node = self.generic_visit(r)
-        o1 = node.left.awkward if isinstance(node.left, ast_awkward) else ast.literal_eval(node.left)
-        o2 = node.left.awkward if isinstance(node.right, ast_awkward) else ast.literal_eval(node.right)
+        assert isinstance(node, ast.BinOp)
+        o1 = cast(ast_awkward, node.left).awkward \
+            if isinstance(node.left, ast_awkward) \
+            else ast.literal_eval(node.left)
+        o2 = cast(ast_awkward, node.right).awkward \
+            if isinstance(node.right, ast_awkward) \
+            else ast.literal_eval(node.right)
 
         if isinstance(node.op, ast.Add):
             return ast_awkward(o1 + o2)
@@ -138,7 +143,8 @@ class inline_executor(ast.NodeTransformer):
             return r
 
     def visit_Compare(self, node: ast.Compare) -> ast.AST:
-        assert len(node.comparators) == 1, 'Internal error - cannot do compare of more complex than 2 operands'
+        assert len(node.comparators) == 1, \
+            'Internal error - cannot do compare of more complex than 2 operands'
         left = self.visit(node.left)
         right = self.visit(node.comparators[0])
 
@@ -177,7 +183,7 @@ class inline_executor(ast.NodeTransformer):
     def visit_Subscript(self, node: ast.Subscript):
         if not isinstance(node.value, ast_awkward):
             return node
-        a = node.value.awkward
+        a = cast(ast_awkward, node.value).awkward
         if not isinstance(node.slice, ast.Index):
             return node
         index = node.slice.value

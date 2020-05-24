@@ -143,7 +143,7 @@ def test_split_in_filter(good_xaod, hep_tables_make_local_call):  # NOQA
 def test_split_in_sqrt(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     import numpy as np
-    df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y))
+    df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y))   # type: ignore
     r = x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)
@@ -154,7 +154,7 @@ def test_split_in_sqrt(good_xaod, hep_tables_make_local_call):  # NOQA
 def test_split_in_sqrt_with_divide(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     import numpy as np
-    df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y)/1000.0)
+    df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y)/1000.0)   # type: ignore
     r = x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)

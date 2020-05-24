@@ -12,6 +12,7 @@
         "f'localds",
         "localds",
         "mplhep",
+        "ndarray",
         "numpy",
         "pyplot",
         "pytest",
