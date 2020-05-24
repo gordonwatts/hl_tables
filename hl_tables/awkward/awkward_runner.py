@@ -106,7 +106,7 @@ class inline_executor(ast.NodeTransformer):
         o = r.awkward
 
         if node.func.attr == 'sqrt':
-            return ast_awkward(np.sqrt(o))
+            return ast_awkward(np.sqrt(o))   # type: ignore
         elif node.func.attr == 'Count':
             return self.call_Count(node, r)
         elif node.func.attr == 'histogram':
@@ -200,7 +200,7 @@ class inline_executor(ast.NodeTransformer):
         if isinstance(node.op, ast.And):
             return ast_awkward(left.awkward & right.awkward)
         elif isinstance(node.op, ast.Or):
-            return ast_awkward(left.awkward | right.awkward)
+            return ast_awkward(left.awkward | right.awkward)   # type: ignore (bug in pyright?)
 
         return node
 

@@ -15,6 +15,7 @@
         "ndarray",
         "numpy",
         "pyplot",
+        "pyright",
         "pytest",
         "servicex",
         "xaod",
