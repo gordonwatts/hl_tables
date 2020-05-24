@@ -209,7 +209,7 @@ class awkward_runner(runner):
     '''
     We can do a xaod on servicex
     '''
-    def process(self, df: DataFrame) -> Union[DataFrame, Column, result]:
+    async def process(self, df: DataFrame) -> Union[DataFrame, Column, result]:
         'Process as much of the tree as we can process'
 
         # Render it into an ast that we can now process!

@@ -1,6 +1,9 @@
+import asyncio
+
 from dataframe_expressions import DataFrame
-from hl_tables import histogram
 import pytest
+
+from hl_tables import histogram
 
 
 @pytest.fixture
@@ -12,7 +15,10 @@ def call_make_local_hist(mocker):
         data = (20, 30)
         return data, bins
 
-    return mocker.patch('hl_tables.local.make_local', side_effect=lambda df: rtn_hist())
+    f = asyncio.Future()
+    f.set_result(rtn_hist())
+
+    return mocker.patch('hl_tables.local.make_local_async', return_value=f)
 
 
 @pytest.fixture
@@ -22,8 +28,9 @@ def mock_plotting(mocker):
     mocker.patch('mplhep.histplot')
 
 
-def test_histogram(call_make_local_hist, mock_plotting):
+@pytest.mark.asyncio
+async def test_histogram(call_make_local_hist, mock_plotting):
     df = DataFrame()
-    histogram(df, bins=50, range=(0, 20))
+    await histogram(df, bins=50, range=(0, 20))
 
     call_make_local_hist.assert_called_once_with(df)

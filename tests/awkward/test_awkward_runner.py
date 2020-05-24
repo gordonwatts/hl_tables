@@ -42,15 +42,17 @@ def awk_arr_3():
     return (n1, n2, n3)
 
 
-def test_no_awkward_root():
+@pytest.mark.asyncio
+async def test_no_awkward_root():
     df = DataFrame()
 
     ar = awkward_runner()
-    r = ar.process(df)
+    r = await ar.process(df)
     assert isinstance(r, DataFrame)
 
 
-def test_addition(awk_arr_pair):
+@pytest.mark.asyncio
+async def test_addition(awk_arr_pair):
     df = DataFrame()
     df1 = df + df
 
@@ -61,12 +63,13 @@ def test_addition(awk_arr_pair):
     df1.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
 
 
-def test_addition_one(awk_arr):
+@pytest.mark.asyncio
+async def test_addition_one(awk_arr):
     df = DataFrame()
     df1 = df + 1000.0
 
@@ -76,12 +79,13 @@ def test_addition_one(awk_arr):
     df1.child_expr.left = ast_awkward(n1)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
 
 
-def test_subtraction(awk_arr_pair):
+@pytest.mark.asyncio
+async def test_subtraction(awk_arr_pair):
     df = DataFrame()
     df1 = df - df
 
@@ -92,12 +96,13 @@ def test_subtraction(awk_arr_pair):
     df1.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
 
 
-def test_multiplication(awk_arr_pair):
+@pytest.mark.asyncio
+async def test_multiplication(awk_arr_pair):
     df = DataFrame()
     df1 = df * df
 
@@ -108,12 +113,13 @@ def test_multiplication(awk_arr_pair):
     df1.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
 
 
-def test_division(awk_arr_pair):
+@pytest.mark.asyncio
+async def test_division(awk_arr_pair):
     df = DataFrame()
     df1 = df / df
 
@@ -124,12 +130,13 @@ def test_division(awk_arr_pair):
     df1.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
 
 
-def test_numpy_sqrt(awk_arr_pair):
+@pytest.mark.asyncio
+async def test_numpy_sqrt(awk_arr_pair):
     import numpy as np
     df = DataFrame()
     df1 = np.sqrt(df + df)
@@ -142,12 +149,13 @@ def test_numpy_sqrt(awk_arr_pair):
     df1.parent.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
 
 
-def test_addition_twice(awk_arr_3):
+@pytest.mark.asyncio
+async def test_addition_twice(awk_arr_3):
     df = DataFrame()
     df1 = df + df + df
 
@@ -161,12 +169,13 @@ def test_addition_twice(awk_arr_3):
     df1.parent.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
 
 
-def test_histogram(awk_arr_pair):
+@pytest.mark.asyncio
+async def test_histogram(awk_arr_pair):
     df = DataFrame()
     df1 = df + df
 
@@ -177,12 +186,13 @@ def test_histogram(awk_arr_pair):
     df1.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = xr.process(histogram(df1, bins=50, range=(0, 20)))
+    r = await xr.process(histogram(df1, bins=50, range=(0, 20)))
 
     assert isinstance(r, result)
 
 
-def test_count(awk_arr):
+@pytest.mark.asyncio
+async def test_count(awk_arr):
     df = DataFrame()
     df1 = df.Count()
 
@@ -194,7 +204,7 @@ def test_count(awk_arr):
     df1.child_expr.func.value = ast_awkward(n1)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -205,7 +215,8 @@ def test_count(awk_arr):
     assert a[2] == 2
 
 
-def test_count_axis_0(awk_arr_uniform):
+@pytest.mark.asyncio
+async def test_count_axis_0(awk_arr_uniform):
     df = DataFrame()
     df1 = df.Count(axis=0)
 
@@ -217,7 +228,7 @@ def test_count_axis_0(awk_arr_uniform):
     df1.child_expr.func.value = ast_awkward(n1)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -226,7 +237,8 @@ def test_count_axis_0(awk_arr_uniform):
     assert a == 3
 
 
-def test_count_axis_last(awk_arr_uniform):
+@pytest.mark.asyncio
+async def test_count_axis_last(awk_arr_uniform):
     df = DataFrame()
     df1 = df.Count(axis=-1)
 
@@ -238,7 +250,7 @@ def test_count_axis_last(awk_arr_uniform):
     df1.child_expr.func.value = ast_awkward(n1)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -249,7 +261,8 @@ def test_count_axis_last(awk_arr_uniform):
     assert a[2] == 2
 
 
-def test_count_toplevel(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_count_toplevel(awk_arr_onelevel):
     df = DataFrame()
     df1 = df.Count()
 
@@ -261,7 +274,7 @@ def test_count_toplevel(awk_arr_onelevel):
     df1.child_expr.func.value = ast_awkward(n1)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -269,7 +282,8 @@ def test_count_toplevel(awk_arr_onelevel):
     assert a == 4
 
 
-def test_count_toplevel_axis_4(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_count_toplevel_axis_4(awk_arr_onelevel):
     df = DataFrame()
     df1 = df.Count(axis=4)
 
@@ -282,12 +296,13 @@ def test_count_toplevel_axis_4(awk_arr_onelevel):
 
     xr = awkward_runner()
     with pytest.raises(Exception) as e:
-        xr.process(df1)
+        await xr.process(df1)
 
     assert "axis" in str(e.value)
 
 
-def test_compare_single_number_eq(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_compare_single_number_eq(awk_arr_onelevel):
     df = DataFrame()
     df1 = df == 2
 
@@ -295,7 +310,7 @@ def test_compare_single_number_eq(awk_arr_onelevel):
     df1.child_expr.left = ast_awkward(awk_arr_onelevel)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -306,7 +321,8 @@ def test_compare_single_number_eq(awk_arr_onelevel):
     assert not a[0]
 
 
-def test_compare_single_number_ne(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_compare_single_number_ne(awk_arr_onelevel):
     df = DataFrame()
     df1 = df != 2
 
@@ -314,7 +330,7 @@ def test_compare_single_number_ne(awk_arr_onelevel):
     df1.child_expr.left = ast_awkward(awk_arr_onelevel)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -325,7 +341,8 @@ def test_compare_single_number_ne(awk_arr_onelevel):
     assert a[0]
 
 
-def test_compare_single_number_gt(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_compare_single_number_gt(awk_arr_onelevel):
     df = DataFrame()
     df1 = df > 2
 
@@ -333,7 +350,7 @@ def test_compare_single_number_gt(awk_arr_onelevel):
     df1.child_expr.left = ast_awkward(awk_arr_onelevel)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -344,7 +361,8 @@ def test_compare_single_number_gt(awk_arr_onelevel):
     assert not a[0]
 
 
-def test_compare_single_number_lt(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_compare_single_number_lt(awk_arr_onelevel):
     df = DataFrame()
     df1 = df < 2
 
@@ -352,7 +370,7 @@ def test_compare_single_number_lt(awk_arr_onelevel):
     df1.child_expr.left = ast_awkward(awk_arr_onelevel)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -363,7 +381,8 @@ def test_compare_single_number_lt(awk_arr_onelevel):
     assert not a[3]
 
 
-def test_compare_single_number_ge(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_compare_single_number_ge(awk_arr_onelevel):
     df = DataFrame()
     df1 = df >= 2
 
@@ -371,7 +390,7 @@ def test_compare_single_number_ge(awk_arr_onelevel):
     df1.child_expr.left = ast_awkward(awk_arr_onelevel)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -382,7 +401,8 @@ def test_compare_single_number_ge(awk_arr_onelevel):
     assert not a[0]
 
 
-def test_compare_single_number_le(awk_arr_onelevel):
+@pytest.mark.asyncio
+async def test_compare_single_number_le(awk_arr_onelevel):
     df = DataFrame()
     df1 = df <= 2
 
@@ -390,7 +410,7 @@ def test_compare_single_number_le(awk_arr_onelevel):
     df1.child_expr.left = ast_awkward(awk_arr_onelevel)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -401,7 +421,8 @@ def test_compare_single_number_le(awk_arr_onelevel):
     assert not a[3]
 
 
-def test_compare_single_number_eq_two(awk_arr):
+@pytest.mark.asyncio
+async def test_compare_single_number_eq_two(awk_arr):
     df = DataFrame()
     df1 = df == 1.1
 
@@ -409,7 +430,7 @@ def test_compare_single_number_eq_two(awk_arr):
     df1.child_expr.left = ast_awkward(awk_arr)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -418,7 +439,8 @@ def test_compare_single_number_eq_two(awk_arr):
     assert a[0][0]
 
 
-def test_filter_simple(awk_arr):
+@pytest.mark.asyncio
+async def test_filter_simple(awk_arr):
     df = DataFrame()
     df1 = df[df == 3.3]
 
@@ -428,7 +450,7 @@ def test_filter_simple(awk_arr):
     df1.child_expr = ast_awkward(awk_arr)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -438,14 +460,15 @@ def test_filter_simple(awk_arr):
     assert len(a.flatten()) == 1
 
 
-def test_mapseq_index_filter(awk_arr_uniform):
+@pytest.mark.asyncio
+async def test_mapseq_index_filter(awk_arr_uniform):
     df = DataFrame()
     df1 = df.mapseq(lambda s: s[0] == 3.3)
 
     df1.child_expr.func.value = ast_awkward(awk_arr_uniform)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -457,7 +480,8 @@ def test_mapseq_index_filter(awk_arr_uniform):
     assert a[1]
 
 
-def test_mapseq_eval_parent(awk_arr_uniform):
+@pytest.mark.asyncio
+async def test_mapseq_eval_parent(awk_arr_uniform):
     df = DataFrame()
     df1 = df+1.0
     df2 = df1.mapseq(lambda s: s[1] == 3.2)
@@ -465,7 +489,7 @@ def test_mapseq_eval_parent(awk_arr_uniform):
     df1.child_expr.left = ast_awkward(awk_arr_uniform)
 
     xr = awkward_runner()
-    r = xr.process(df2)
+    r = await xr.process(df2)
 
     assert isinstance(r, result)
     a = r.result
@@ -477,14 +501,15 @@ def test_mapseq_eval_parent(awk_arr_uniform):
     assert a[0]
 
 
-def test_mapseq_index_filter_with_and(awk_arr_uniform):
+@pytest.mark.asyncio
+async def test_mapseq_index_filter_with_and(awk_arr_uniform):
     df = DataFrame()
     df1 = df.mapseq(lambda s: (s[0] == 3.3) & (s[1] == 4.4))
 
     df1.child_expr.func.value = ast_awkward(awk_arr_uniform)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result
@@ -496,14 +521,15 @@ def test_mapseq_index_filter_with_and(awk_arr_uniform):
     assert a[1]
 
 
-def test_mapseq_index_filter_with_or(awk_arr_uniform):
+@pytest.mark.asyncio
+async def test_mapseq_index_filter_with_or(awk_arr_uniform):
     df = DataFrame()
     df1 = df.mapseq(lambda s: (s[0] == 3.3) | (s[1] == 6.6))
 
     df1.child_expr.func.value = ast_awkward(awk_arr_uniform)
 
     xr = awkward_runner()
-    r = xr.process(df1)
+    r = await xr.process(df1)
 
     assert isinstance(r, result)
     a = r.result

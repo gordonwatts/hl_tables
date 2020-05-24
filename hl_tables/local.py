@@ -1,5 +1,4 @@
 from typing import Any, List
-import copy
 
 from dataframe_expressions import DataFrame
 
@@ -10,14 +9,14 @@ from .awkward.awkward_runner import awkward_runner
 runners: List[runner] = [xaod_runner(), awkward_runner()]
 
 
-def make_local(df: DataFrame) -> Any:
+async def make_local_async(df: DataFrame) -> Any:
     '''
     Get the data from the remote system that is represented by `df` and get it here, locally, on
     this computer.
     '''
     modified_df = df
     for r in runners:
-        modified_df = r.process(modified_df)
+        modified_df = await r.process(modified_df)
         if isinstance(modified_df, result):
             break
 

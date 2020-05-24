@@ -20,30 +20,33 @@ def good_xaod():
     return xaod_table(e)
 
 
-def test_with_nothing(hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_with_nothing(hep_tables_make_local_call):  # NOQA
     # Hand it a xAOD that isn't based on anything.
     df = DataFrame()
     x = xaod_runner()
-    r = x.process(df)
+    r = await x.process(df)
     assert isinstance(r, DataFrame)
     hep_tables_make_local_call.assert_not_called()
 
 
-def test_with_nothing_deeper(hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_with_nothing_deeper(hep_tables_make_local_call):  # NOQA
     # Hand it a xAOD that isn't based on anything.
     df = DataFrame()
     df1 = df[df.x > 10].y
     x = xaod_runner()
-    r = x.process(df1)
+    r = await x.process(df1)
     assert isinstance(r, DataFrame)
     hep_tables_make_local_call.assert_not_called()
 
 
-def test_with_result(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_with_result(good_xaod, hep_tables_make_local_call):  # NOQA
     # Hand it something it can do, and then see if it can make it work!
     x = xaod_runner()
     df1 = good_xaod.x
-    r = x.process(df1)
+    r = await x.process(df1)
 
     assert r is not None
     assert isinstance(r, result)
@@ -51,11 +54,12 @@ def test_with_result(good_xaod, hep_tables_make_local_call):  # NOQA
     hep_tables_make_local_call.assert_called_once_with(df1)
 
 
-def test_with_filter_result(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_with_filter_result(good_xaod, hep_tables_make_local_call):  # NOQA
     # Hand it something it can do, and then see if it can make it work!
     x = xaod_runner()
     df1 = good_xaod[good_xaod.x > 10].x
-    r = x.process(df1)
+    r = await x.process(df1)
 
     assert r is not None
     assert isinstance(r, result)
@@ -63,19 +67,21 @@ def test_with_filter_result(good_xaod, hep_tables_make_local_call):  # NOQA
     hep_tables_make_local_call.assert_called_once_with(df1)
 
 
-def test_split_call_binary_const(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_call_binary_const(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     df1 = good_xaod.x * 10
-    r = x.process(df1)
+    r = await x.process(df1)
     assert r is not None
     assert isinstance(r, result)
     assert hep_tables_make_local_call.call_count == 1
 
 
-def test_split_call_binary(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_call_binary(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     df1 = good_xaod.x + good_xaod.y
-    r = x.process(df1)
+    r = await x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
@@ -85,10 +91,11 @@ def test_split_call_binary(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(a.right, ast_awkward)
 
 
-def test_split_call_compare(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_call_compare(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     df1 = good_xaod.x > good_xaod.y
-    r = x.process(df1)
+    r = await x.process(df1)
     assert r is not None
     assert isinstance(r, Column)
     assert hep_tables_make_local_call.call_count == 2
@@ -98,29 +105,32 @@ def test_split_call_compare(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(a.comparators[0], ast_awkward)
 
 
-def test_split_double(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_double(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     df1 = good_xaod.x + good_xaod.y
-    r = x.process(df1[df1 < 20])
+    r = await x.process(df1[df1 < 20])
     assert r is not None
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
 
 
-def test_split_double_count(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_double_count(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     df1 = good_xaod.x + good_xaod.y
-    r = x.process(df1[df1 < 20].Count())
+    r = await x.process(df1[df1 < 20].Count())
     assert r is not None
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
 
 
-def test_split_call_good_filter(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_call_good_filter(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     ok_events = good_xaod[good_xaod.x > 10]
     df1 = ok_events.x + ok_events.y
-    r = x.process(df1)
+    r = await x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
@@ -130,45 +140,49 @@ def test_split_call_good_filter(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(a.right, ast_awkward)
 
 
-def test_split_in_filter(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_in_filter(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     ok_events = good_xaod[good_xaod.x > good_xaod.y]
     df1 = ok_events.z
-    r = x.process(df1)
+    r = await x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 3
 
 
-def test_split_in_sqrt(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_in_sqrt(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     import numpy as np
     df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y))   # type: ignore
-    r = x.process(df1)
+    r = await x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
     assert isinstance(r.child_expr, ast.Call)
 
 
-def test_split_in_sqrt_with_divide(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_split_in_sqrt_with_divide(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     import numpy as np
     df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y)/1000.0)   # type: ignore
-    r = x.process(df1)
+    r = await x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)
     assert hep_tables_make_local_call.call_count == 2
     assert isinstance(r.child_expr, ast.BinOp)
 
 
-def test_run_twice(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_run_twice(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     ok_events = good_xaod[good_xaod.x > 10]
     df1 = ok_events.x + ok_events.y
-    _ = x.process(df1)
+    _ = await x.process(df1)
 
-    r2 = x.process(df1)
+    r2 = await x.process(df1)
 
     assert r2 is not None
     assert isinstance(r2, DataFrame)
@@ -179,7 +193,8 @@ def test_run_twice(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(a.right, ast_awkward)
 
 
-def test_run_mapseq(good_xaod, hep_tables_make_local_call):  # NOQA
+@pytest.mark.asyncio
+async def test_run_mapseq(good_xaod, hep_tables_make_local_call):  # NOQA
     from hl_tables.atlas import a_3v
     truth = good_xaod.TruthParticles('TruthParticles')
     llp_truth = truth[truth.pdgId == 35]
@@ -191,7 +206,7 @@ def test_run_mapseq(good_xaod, hep_tables_make_local_call):  # NOQA
     has_1muon = lxy_2[lxy_2.mapseq(lambda s: s[0] > 1 | s[1] < 2)].Count()
 
     x = xaod_runner()
-    r = x.process(has_1muon)
+    r = await x.process(has_1muon)
 
     assert isinstance(r, DataFrame)
 

@@ -1,13 +1,15 @@
-from typing import Union, Dict, Iterable, Optional
 import ast
 import copy
+from typing import Any, Dict, Iterable, Optional, Union
+import asyncio
 
-from dataframe_expressions import DataFrame, ast_DataFrame, Column
+from dataframe_expressions import Column, DataFrame, ast_DataFrame
 from dataframe_expressions.asts import ast_Column
+import hep_tables
 from hep_tables.hep_table import xaod_table
 
-from ..runner import result, runner, ast_awkward
-import hep_tables
+from ..ast_utils import AsyncNodeTransformer
+from ..runner import ast_awkward, result, runner
 
 # TODO: this should not be in the hl_tables package, but it its own or in
 #       in the `hep_tables` package.
@@ -124,47 +126,49 @@ class _mark(ast.NodeVisitor):
         self._update_good(not _check_for_df_ref([node.left] + node.comparators))
 
 
-class _transform(ast.NodeTransformer):
+class _transform(AsyncNodeTransformer):
     def __init__(self, m: _mark):
-        ast.NodeTransformer.__init__(self)
+        AsyncNodeTransformer.__init__(self)
         self._marker = m
-        self._parent = None
+        self._cached_results: Dict[int, ast_awkward] = {}
 
-    def visit_ast_DataFrame(self, node: ast_DataFrame) -> ast.AST:
+    async def visit_ast_DataFrame(self, node: ast_DataFrame, context: Any) -> ast.AST:
         if self._marker.lookup_mark(node):
-            r = hep_tables.make_local(node.dataframe)
-            return ast_awkward(r)
+            if id(node) in self._cached_results:
+                return self._cached_results[id(node)]
+            r = ast_awkward(await hep_tables.make_local(node.dataframe))
+            self._cached_results[id(node)] = r
+            return r
         else:
+            # Since it isn't good, we need to traverse the tree of all the dependents
+            # to see if we can run anything there. We'll have to alter the "parent"
+            # we are passing down, of course, as we've moved a level down in the tree.
             df = node.dataframe
-
-            # Ok - we have to go down one level here, sadly.
-            old_parent = self._parent
-            self._parent = df.parent
-
+            results = []
             if df.child_expr is not None:
-                self.visit(df.child_expr)
+                results.append(self.visit(df.child_expr, df.parent))
             elif df.parent is not None:
-                self.visit(self._marker._df_ast_for(df.parent))
+                results.append(self.visit(self._marker._df_ast_for(df.parent), df.parent))
 
             if df.filter is not None:
-                self.visit(self._marker._col_ast_for(df.filter))
+                results.append(self.visit(self._marker._col_ast_for(df.filter), df.parent))
 
-            self._parent = old_parent
+            await asyncio.gather(*results)
+
             return node
 
-    def visit_ast_Column(self, node: ast_Column) -> ast.AST:
-        old_parent = self._parent
-        self._parent = None
-
-        self.visit(node.column.child_expr)
-
-        self._parent = old_parent
+    async def visit_ast_Column(self, node: ast_Column, context: Any) -> ast.AST:
+        # Since this is never marked "good", we need to only explore the child expressions
+        # to see if there is some rendering hidden there.
+        # Note we replace the parent as we go down one here with
+        # None - there is no parent in ast_DataFrame.
+        await self.visit(node.column.child_expr, None)
         return node
 
-    def visit_Name(self, node: ast.Name):
+    async def visit_Name(self, node: ast.Name, context: Any):
         if node.id == 'p':
-            assert self._parent is not None
-            return self.visit(self._marker._df_ast_for(self._parent))
+            assert context is not None
+            return await self.visit(self._marker._df_ast_for(context))
         return node
 
 
@@ -175,7 +179,7 @@ def _as_ast(df: Union[DataFrame, Column]) -> Union[ast_DataFrame, ast_Column]:
         return ast_Column(df)
 
 
-def _process(df: Union[DataFrame, Column]) -> Union[DataFrame, Column, result]:
+async def _process(df: Union[DataFrame, Column]) -> Union[DataFrame, Column, result]:
     '''
     Process as much of the dataframe/column as we can in a two step process.
 
@@ -190,7 +194,7 @@ def _process(df: Union[DataFrame, Column]) -> Union[DataFrame, Column, result]:
 
     # Run the transformation to see what we can actually convert.
     t = _transform(marker)
-    r = t.visit(top_level_ast)
+    r = await t.visit(top_level_ast)
 
     if isinstance(r, ast_Column):
         return r.column
@@ -206,13 +210,6 @@ class xaod_runner(runner):
     '''
     We can do a xaod on servicex
     '''
-    def process(self, df: DataFrame) -> Union[DataFrame, Column, result]:
+    async def process(self, df: DataFrame) -> Union[DataFrame, Column, result]:
         'Process as much of the tree as we can process'
-        return _process(df)
-        # can_process, modified_df = _process_by_depth(df)
-
-        # if not can_process:
-        #     return modified_df
-        # else:
-        #     r = hep_tables.make_local(df)
-        #     return result(r)
+        return await _process(df)
