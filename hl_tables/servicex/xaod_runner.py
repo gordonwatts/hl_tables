@@ -131,14 +131,38 @@ class _transform(AsyncNodeTransformer):
         AsyncNodeTransformer.__init__(self)
         self._marker = m
         self._cached_results: Dict[int, ast_awkward] = {}
+        self._results_in_progress: Dict[int, asyncio.Event] = {}
+        self._cached_lock = asyncio.Lock()
 
     async def visit_ast_DataFrame(self, node: ast_DataFrame, context: Any) -> ast.AST:
         if self._marker.lookup_mark(node):
-            if id(node) in self._cached_results:
-                return self._cached_results[id(node)]
-            r = ast_awkward(await hep_tables.make_local_async(node.dataframe))
-            self._cached_results[id(node)] = r
-            return r
+            # TODO: The below is a pretty common pattern. Isn't it implemented
+            # somewhere?
+            # Transition to this: https://github.com/aio-libs/async_lru? We have enough testing
+            # it could be a drop-in.
+            async with self._cached_lock:
+                t_id = id(node.dataframe)
+                if t_id in self._cached_results:
+                    return self._cached_results[t_id]
+
+                if t_id in self._results_in_progress:
+                    lock = self._results_in_progress[t_id]
+                    do_calc = False
+                else:
+                    lock = asyncio.Event()
+                    self._results_in_progress[t_id] = lock
+                    do_calc = True
+            if do_calc:
+                r = ast_awkward(await hep_tables.make_local_async(node.dataframe))
+                async with self._cached_lock:
+                    self._cached_results[t_id] = r
+                    del self._results_in_progress[t_id]
+                lock.set()
+                return r
+            else:
+                await lock.wait()
+                return self._cached_results[t_id]
+
         else:
             # Since it isn't good, we need to traverse the tree of all the dependents
             # to see if we can run anything there. We'll have to alter the "parent"

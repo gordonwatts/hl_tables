@@ -9,7 +9,7 @@ import pytest
 from hl_tables.runner import ast_awkward, result
 from hl_tables.servicex.xaod_runner import xaod_runner
 
-from ..utils_for_testing import hep_tables_make_local_call  # NOQA
+from ..utils_for_testing import hep_tables_make_local_call, hep_tables_make_local_call_pause  # NOQA
 
 # For dev work do: pip install git+https://github.com/numpy/numpy-stubs
 
@@ -191,6 +191,16 @@ async def test_run_twice(good_xaod, hep_tables_make_local_call):  # NOQA
     assert isinstance(a, ast.BinOp)
     assert isinstance(a.left, ast_awkward)
     assert isinstance(a.right, ast_awkward)
+
+
+@pytest.mark.asyncio
+async def test_request_twice(good_xaod, hep_tables_make_local_call_pause):  # NOQA
+    x = xaod_runner()
+    ok_events = good_xaod[good_xaod.x > 10]
+    df1 = ok_events.x + ok_events.y + ok_events.x
+    _ = await x.process(df1)
+
+    assert hep_tables_make_local_call_pause.call_count == 2
 
 
 @pytest.mark.asyncio
