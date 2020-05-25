@@ -17,6 +17,7 @@
         "mplhep",
         "ndarray",
         "numpy",
+        "numpy's",
         "pyplot",
         "pyright",
         "pytest",
