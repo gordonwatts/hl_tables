@@ -1,6 +1,7 @@
 from typing import Any, List
 
 from dataframe_expressions import DataFrame
+from make_it_sync import make_sync
 
 from .runner import runner, result
 from .servicex.xaod_runner import xaod_runner
@@ -24,3 +25,5 @@ async def make_local_async(df: DataFrame) -> Any:
         raise Exception('Unable to process data frame!')
 
     return modified_df.result
+
+make_local = make_sync(make_local_async)

@@ -136,7 +136,7 @@ class _transform(AsyncNodeTransformer):
         if self._marker.lookup_mark(node):
             if id(node) in self._cached_results:
                 return self._cached_results[id(node)]
-            r = ast_awkward(await hep_tables.make_local(node.dataframe))
+            r = ast_awkward(await hep_tables.make_local_async(node.dataframe))
             self._cached_results[id(node)] = r
             return r
         else:

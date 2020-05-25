@@ -28,9 +28,8 @@ def mock_plotting(mocker):
     mocker.patch('mplhep.histplot')
 
 
-@pytest.mark.asyncio
-async def test_histogram(call_make_local_hist, mock_plotting):
+def test_histogram(call_make_local_hist, mock_plotting):
     df = DataFrame()
-    await histogram(df, bins=50, range=(0, 20))
+    histogram(df, bins=50, range=(0, 20))
 
     call_make_local_hist.assert_called_once_with(df)

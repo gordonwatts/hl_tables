@@ -15,10 +15,9 @@ def call_make_local_count(mocker):
     return mocker.patch('hl_tables.local.make_local_async', return_value=f)
 
 
-@pytest.mark.asyncio
-async def test_histogram(call_make_local_count):
+def test_count(call_make_local_count):
     df = DataFrame()
-    r = await count(df)
+    r = count(df)
     assert r == 20
 
     call_make_local_count.assert_called_once()

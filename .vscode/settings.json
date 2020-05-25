@@ -12,6 +12,7 @@
         "dataset",
         "f'localds",
         "firstlineno",
+        "jupyterlab",
         "localds",
         "mplhep",
         "ndarray",
