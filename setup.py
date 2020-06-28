@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 extras_require = {'test': ['pytest', 'pytest-asyncio', 'pytest-cov', 'pytest-mock', 'flake8',
                            'coverage', 'twine', 'wheel'],
-                  'notebook': ['jupyterlab', 'matplotlib']}
+                  'notebook': ['jupyterlab']}
 extras_require['complete'] = sorted(set(sum(extras_require.values(), [])))
 
 setup(name="hl_tables",
@@ -27,7 +27,8 @@ setup(name="hl_tables",
       test_suite="tests",
       install_requires=[
           "hep_tables>=1.0b1",
-          "make_it_sync"
+          "make_it_sync",
+          "matplotlib"
       ],
       extras_require=extras_require,
       classifiers=[
