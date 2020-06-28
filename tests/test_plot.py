@@ -25,7 +25,6 @@ def call_make_local_hist(mocker):
 def mock_plotting(mocker):
     mocker.patch('matplotlib.pyplot.subplots',
                  return_value=(mocker.MagicMock(), mocker.MagicMock()))
-    mocker.patch('mplhep.histplot')
 
 
 def test_histogram(call_make_local_hist, mock_plotting):
