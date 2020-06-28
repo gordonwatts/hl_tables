@@ -45,7 +45,7 @@ class _atlas_3v(DataFrame):
         from numpy import sqrt
         bx = self._ref.render(lambda v: v.x)
         by = self._ref.render(lambda v: v.y)
-        return cast(DataFrame, sqrt(bx*bx + by*by))
+        return cast(DataFrame, sqrt(bx * bx + by * by))
 
     @property
     def x(self) -> DataFrame:

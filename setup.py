@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 extras_require = {'test': ['pytest', 'pytest-asyncio', 'pytest-cov', 'pytest-mock', 'flake8',
-                           'coverage', 'twine'],
+                           'coverage', 'twine', 'wheel'],
                   'notebook': ['jupyterlab', 'matplotlib']}
 extras_require['complete'] = sorted(set(sum(extras_require.values(), [])))
 
@@ -31,16 +31,16 @@ setup(name="hl_tables",
       ],
       extras_require=extras_require,
       classifiers=[
-                   # "Development Status :: 3 - Alpha",
-                   # "Development Status :: 4 - Beta",
-                   # "Development Status :: 5 - Production/Stable",
-                   # "Development Status :: 6 - Mature",
-                   "Intended Audience :: Developers",
-                   "Intended Audience :: Information Technology",
-                   "Programming Language :: Python",
-                   "Programming Language :: Python :: 3.7",
-                   "Topic :: Software Development",
-                   "Topic :: Utilities",
+          # "Development Status :: 3 - Alpha",
+          # "Development Status :: 4 - Beta",
+          # "Development Status :: 5 - Production/Stable",
+          # "Development Status :: 6 - Mature",
+          "Intended Audience :: Developers",
+          "Intended Audience :: Information Technology",
+          "Programming Language :: Python",
+          "Programming Language :: Python :: 3.7",
+          "Topic :: Software Development",
+          "Topic :: Utilities",
       ],
       data_files=[],
       python_requires='>=3.6, <3.8',
