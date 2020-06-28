@@ -37,4 +37,5 @@ class runner:
     '''
 
     @abstractmethod
-    async def process(self, df: DataFrame) -> Union[DataFrame, result]: pass
+    async def process(self, df: DataFrame) -> Union[DataFrame, result]:
+        pass
