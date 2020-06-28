@@ -1,6 +1,5 @@
 # type: ignore
 import ast
-from typing import cast
 
 import awkward
 from dataframe_expressions import DataFrame, ast_DataFrame
@@ -485,7 +484,7 @@ async def test_mapseq_index_filter(awk_arr_uniform):
 @pytest.mark.asyncio
 async def test_mapseq_eval_parent(awk_arr_uniform):
     df = DataFrame()
-    df1 = df+1.0
+    df1 = df + 1.0
     df2 = df1.mapseq(lambda s: s[1] == 3.2)
 
     df1.child_expr.left = ast_awkward(awk_arr_uniform)

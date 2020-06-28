@@ -1,7 +1,7 @@
 import ast
-import copy
-from typing import Any, Dict, Iterable, Union
 import asyncio
+import copy
+from typing import Dict, Iterable, Union
 
 from dataframe_expressions import Column, DataFrame, ast_DataFrame
 from dataframe_expressions.asts import ast_Column
@@ -47,13 +47,6 @@ class _mark(ast.NodeVisitor):
         i = id(a)
         assert i in self._marks, 'internal programming error'
         return self._marks[i]
-
-    def _df_ast_for(self, df: DataFrame) -> ast.AST:
-        'Cache the ast dataframe object so we can track its good and bad'
-        h = id(df)
-        if h not in self._df_asts:
-            self._df_asts[h] = ast_DataFrame(df)
-        return self._df_asts[h]
 
     def _col_ast_for(self, c: Column) -> ast.AST:
         h = hash(c)

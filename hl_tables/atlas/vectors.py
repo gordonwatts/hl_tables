@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Callable, Any, Optional, cast
+from typing import Any, Callable, Optional, cast
 
-from dataframe_expressions import DataFrame, exclusive_class, ast_DataFrame
+from dataframe_expressions import DataFrame, ast_DataFrame, exclusive_class
 
 
 # TODO: does this really belong in this package in the end?

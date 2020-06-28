@@ -3,7 +3,6 @@ from typing import cast
 
 from dataframe_expressions import DataFrame
 from dataframe_expressions.asts import ast_DataFrame
-from numpy.lib.arraysetops import isin
 
 from hl_tables.atlas import a_3v
 
@@ -40,6 +39,26 @@ def test_3v_x():
     assert df1.child_expr is not None
     assert ast.dump(df1.child_expr) == "Attribute(value=ast_DataFrame(), " \
                                        "attr='x', ctx=Load())"
+
+
+def test_3v_y():
+    df = DataFrame()
+    v1 = a_3v(df)
+    df1 = v1.y
+    assert df1 is not None
+    assert df1.child_expr is not None
+    assert ast.dump(df1.child_expr) == "Attribute(value=ast_DataFrame(), " \
+                                       "attr='y', ctx=Load())"
+
+
+def test_3v_z():
+    df = DataFrame()
+    v1 = a_3v(df)
+    df1 = v1.z
+    assert df1 is not None
+    assert df1.child_expr is not None
+    assert ast.dump(df1.child_expr) == "Attribute(value=ast_DataFrame(), " \
+                                       "attr='z', ctx=Load())"
 
 
 def test_3v_add_x():

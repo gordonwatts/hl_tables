@@ -1,6 +1,6 @@
 from ast import AST, iter_fields
 import asyncio
-from typing import Optional, Any
+from typing import Any, Optional
 
 
 class AsyncNodeVisitor:

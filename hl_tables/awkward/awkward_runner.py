@@ -92,9 +92,6 @@ class inline_executor(ast.NodeTransformer):
             return node
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
-        if node is None:
-            return node
-
         if not isinstance(node.func, ast.Attribute):
             return node
 
