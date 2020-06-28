@@ -1,6 +1,6 @@
 import ast
 import copy
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, Union
 import asyncio
 
 from dataframe_expressions import Column, DataFrame, ast_DataFrame
@@ -23,10 +23,6 @@ def _has_df_ref(a: ast.AST):
         def visit_ast_DataFrame(self, node: ast_DataFrame):
             self.seen = True
 
-        def visit_Name(self, node: ast.Name):
-            if node.id == 'p':
-                self.seen = True
-
     f = find_it()
     f.visit(a)
     return f.seen
@@ -41,7 +37,6 @@ class _mark(ast.NodeVisitor):
     def __init__(self):
         ast.NodeVisitor.__init__(self)
         self._marks: Dict[int, bool] = {}
-        self._parent: Optional[DataFrame] = None
         self._df_asts: Dict[int, Union[ast_DataFrame, ast_Column]] = {}
         self._good = True
 
@@ -86,36 +81,18 @@ class _mark(ast.NodeVisitor):
     def visit_ast_DataFrame(self, node: ast_DataFrame):
         # Look for a top level dataframe we can't deal with.
         df = node.dataframe
-        if df.parent is None:
+
+        if df.child_expr is None:
             self._good = isinstance(df, xaod_table)
             return
 
-        # Ok - we have to go down one level here, sadly.
-        old_parent = self._parent
-        self._parent = df.parent
-
-        if df.child_expr is not None:
-            self.visit(df.child_expr)
-        else:
-            self.visit(self._df_ast_for(df.parent))
+        self.visit(df.child_expr)
 
         if df.filter is not None:
             self.visit(self._col_ast_for(df.filter))
 
-        self._parent = old_parent
-
     def visit_ast_Column(self, node: ast_Column):
-        old_parent = self._parent
-        self._parent = None
-
         self.visit(node.column.child_expr)
-
-        self._parent = old_parent
-
-    def visit_Name(self, node: ast.Name):
-        if node.id == 'p':
-            assert self._parent is not None
-            self.visit(self._df_ast_for(self._parent))
 
     def visit_BinOp(self, node: ast.BinOp):
         self.generic_visit(node)
@@ -134,7 +111,7 @@ class _transform(AsyncNodeTransformer):
         self._results_in_progress: Dict[int, asyncio.Event] = {}
         self._cached_lock = asyncio.Lock()
 
-    async def visit_ast_DataFrame(self, node: ast_DataFrame, context: Any) -> ast.AST:
+    async def visit_ast_DataFrame(self, node: ast_DataFrame) -> ast.AST:
         if self._marker.lookup_mark(node):
             # TODO: The below is a pretty common pattern. Isn't it implemented
             # somewhere?
@@ -170,29 +147,21 @@ class _transform(AsyncNodeTransformer):
             df = node.dataframe
             results = []
             if df.child_expr is not None:
-                results.append(self.visit(df.child_expr, df.parent))
-            elif df.parent is not None:
-                results.append(self.visit(self._marker._df_ast_for(df.parent), df.parent))
+                results.append(self.visit(df.child_expr))
 
             if df.filter is not None:
-                results.append(self.visit(self._marker._col_ast_for(df.filter), df.parent))
+                results.append(self.visit(self._marker._col_ast_for(df.filter)))
 
             await asyncio.gather(*results)
 
             return node
 
-    async def visit_ast_Column(self, node: ast_Column, context: Any) -> ast.AST:
+    async def visit_ast_Column(self, node: ast_Column) -> ast.AST:
         # Since this is never marked "good", we need to only explore the child expressions
         # to see if there is some rendering hidden there.
         # Note we replace the parent as we go down one here with
         # None - there is no parent in ast_DataFrame.
-        await self.visit(node.column.child_expr, None)
-        return node
-
-    async def visit_Name(self, node: ast.Name, context: Any):
-        if node.id == 'p':
-            assert context is not None
-            return await self.visit(self._marker._df_ast_for(context))
+        await self.visit(node.column.child_expr)
         return node
 
 

@@ -1,14 +1,21 @@
-from hl_tables import make_local_async
-from hep_tables import xaod_table
+import ast
+from typing import Any
+
 from func_adl import EventDataset
+from hep_tables import xaod_table
 import pytest
+
+from hl_tables import make_local_async
+
 from .utils_for_testing import hep_tables_make_local_call  # NOQA
 
 
 @pytest.fixture
 def df_truth_count():
-    dataset = EventDataset('localds://mc16_13TeV:bogus')
-    df = xaod_table(dataset)
+    class my_events(EventDataset):
+        async def execute_result_async(self, a: ast.AST) -> Any:
+            raise NotImplementedError()
+    df = xaod_table(my_events())
     truth = df.TruthParticles('TruthParticles')
     llp_truth = truth[truth.pdgId == 35]
     return llp_truth.Count()

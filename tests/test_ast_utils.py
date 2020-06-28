@@ -22,7 +22,7 @@ async def test_atrans_dual():
 @pytest.mark.asyncio
 async def test_atrans_replace():
     class repl(AsyncNodeTransformer):
-        async def visit_Num(self, node: ast.Num, context: Any):
+        async def visit_Num(self, node: ast.Num):
             await asyncio.sleep(0.01)
             assert node.n == 10
             return ast.Num(n=20)
@@ -36,9 +36,8 @@ async def test_atrans_replace():
 @pytest.mark.asyncio
 async def test_atrans_context():
     class repl(AsyncNodeTransformer):
-        async def visit_Num(self, node: ast.Num, context: Any):
-            assert context == 10
+        async def visit_Num(self, node: ast.Num):
             return node
 
     a = ast.parse('x + 10 if x < 10 else x - 10')
-    await repl().visit(a, 10)
+    await repl().visit(a)

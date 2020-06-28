@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Callable, Any, Optional, cast
 
-from dataframe_expressions import DataFrame, exclusive_class
+from dataframe_expressions import DataFrame, exclusive_class, ast_DataFrame
 
 
 # TODO: does this really belong in this package in the end?
@@ -36,7 +36,8 @@ class op_vec(op_base):
 @exclusive_class
 class _atlas_3v(DataFrame):
     def __init__(self, df: DataFrame, compound: Optional[op_base] = None) -> None:
-        DataFrame.__init__(self, df)
+        DataFrame.__init__(self, ast_DataFrame(df))
+        self._base_df = df
         self._ref: op_base = compound if compound is not None else op_vec(df)
 
     @property
@@ -61,14 +62,12 @@ class _atlas_3v(DataFrame):
     def __add__(self, other: _atlas_3v) -> _atlas_3v:
         'Do the addition'
         assert isinstance(other, _atlas_3v)
-        assert self.parent is not None
-        return _atlas_3v(self.parent, op_bin('+', self._ref, other._ref))
+        return _atlas_3v(self._base_df, op_bin('+', self._ref, other._ref))
 
     def __sub__(self, other: _atlas_3v) -> _atlas_3v:
         'Do the addition'
         assert isinstance(other, _atlas_3v)
-        assert self.parent is not None
-        return _atlas_3v(self.parent, op_bin('-', self._ref, other._ref))
+        return _atlas_3v(self._base_df, op_bin('-', self._ref, other._ref))
 
 
 def a_3v(df: DataFrame):

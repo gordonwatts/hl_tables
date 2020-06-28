@@ -12,7 +12,7 @@ extras_require = {'test': ['pytest', 'pytest-asyncio', 'pytest-cov', 'pytest-moc
 extras_require['complete'] = sorted(set(sum(extras_require.values(), [])))
 
 setup(name="hl_tables",
-      version='0.0.1a1',
+      version='1.0.0b1',
       packages=['hl_tables'],
       scripts=[],
       description="Tables for structured data - universal backend",
@@ -26,7 +26,7 @@ setup(name="hl_tables",
       license="TBD",
       test_suite="tests",
       install_requires=[
-          # "hep_tables",
+          "hep_tables>=1.0b1",
           "make_it_sync"
       ],
       extras_require=extras_require,

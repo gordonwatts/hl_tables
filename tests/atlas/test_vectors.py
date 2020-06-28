@@ -1,6 +1,10 @@
 import ast
+from typing import cast
 
 from dataframe_expressions import DataFrame
+from dataframe_expressions.asts import ast_DataFrame
+from numpy.lib.arraysetops import isin
+
 from hl_tables.atlas import a_3v
 
 
@@ -34,7 +38,7 @@ def test_3v_x():
     df1 = v1.x
     assert df1 is not None
     assert df1.child_expr is not None
-    assert ast.dump(df1.child_expr) == "Attribute(value=Name(id='p', ctx=Load()), " \
+    assert ast.dump(df1.child_expr) == "Attribute(value=ast_DataFrame(), " \
                                        "attr='x', ctx=Load())"
 
 
@@ -46,10 +50,13 @@ def test_3v_add_x():
     df1 = r.x
     assert df1 is not None
     assert df1.child_expr is not None
-    assert ast.dump(df1.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
+    assert ast.dump(df1.child_expr) == "BinOp(left=ast_DataFrame(), " \
                                        "op=Add(), right=ast_DataFrame())"
-    assert df1.parent.child_expr is not None
-    assert ast.dump(df1.parent.child_expr) == "Attribute(value=Name(id='p', ctx=Load()), " \
+    assert isinstance(df1.child_expr, ast.BinOp)
+    assert isinstance(df1.child_expr.left, ast_DataFrame)
+    df1_parent = cast(ast_DataFrame, df1.child_expr.left).dataframe
+    assert df1_parent.child_expr is not None
+    assert ast.dump(df1_parent.child_expr) == "Attribute(value=ast_DataFrame(), " \
                                               "attr='x', ctx=Load())"
 
 
@@ -58,17 +65,24 @@ def test_3v_xy():
     v1 = a_3v(df)
     df1 = v1.xy
     assert df1.child_expr is not None
-    assert ast.dump(df1.child_expr) == "Call(func=Attribute(value=Name(id='p', ctx=Load())," \
+    assert ast.dump(df1.child_expr) == "Call(func=Attribute(value=ast_DataFrame()," \
                                        " attr='sqrt', ctx=Load()), args=[], keywords=[])"
-    assert df1.parent.child_expr is not None
-    assert ast.dump(df1.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
+    assert isinstance(df1.child_expr, ast.Call)
+    assert isinstance(df1.child_expr.func, ast.Attribute)
+    df1_parent = cast(ast_DataFrame, df1.child_expr.func.value).dataframe
+    assert df1_parent.child_expr is not None
+    assert ast.dump(df1_parent.child_expr) == "BinOp(left=ast_DataFrame(), " \
                                               "op=Add(), right=ast_DataFrame())"
-    assert df1.parent.parent.child_expr is not None
-    assert ast.dump(df1.parent.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
+    assert isinstance(df1_parent.child_expr, ast.BinOp)
+    df1_parent_parent = cast(ast_DataFrame, df1_parent.child_expr.left).dataframe
+    assert df1_parent_parent.child_expr is not None
+    assert ast.dump(df1_parent_parent.child_expr) == "BinOp(left=ast_DataFrame(), " \
                                                      "op=Mult(), right=ast_DataFrame())"
-    assert df1.parent.parent.parent.child_expr is not None
-    assert ast.dump(df1.parent.parent.parent.child_expr) == \
-        "Attribute(value=Name(id='p', ctx=Load()), attr='x', ctx=Load())"
+    assert isinstance(df1_parent_parent.child_expr, ast.BinOp)
+    df1_parent_parent_parent = cast(ast_DataFrame, df1_parent_parent.child_expr.left).dataframe
+    assert df1_parent_parent_parent.child_expr is not None
+    assert ast.dump(df1_parent_parent_parent.child_expr) == \
+        "Attribute(value=ast_DataFrame(), attr='x', ctx=Load())"
 
 
 def test_3v_add_xy():
@@ -78,17 +92,30 @@ def test_3v_add_xy():
     r = v1 + v2
     df1 = r.xy
     assert df1.child_expr is not None
-    assert ast.dump(df1.child_expr) == "Call(func=Attribute(value=Name(id='p', ctx=Load())," \
+    assert ast.dump(df1.child_expr) == "Call(func=Attribute(value=ast_DataFrame()," \
                                        " attr='sqrt', ctx=Load()), args=[], keywords=[])"
-    assert df1.parent.child_expr is not None
-    assert ast.dump(df1.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
+    assert isinstance(df1.child_expr, ast.Call)
+    assert isinstance(df1.child_expr.func, ast.Attribute)
+    df1_parent = cast(ast_DataFrame, df1.child_expr.func.value).dataframe
+    assert df1_parent.child_expr is not None
+    assert ast.dump(df1_parent.child_expr) == "BinOp(left=ast_DataFrame(), " \
                                               "op=Add(), right=ast_DataFrame())"
-    assert df1.parent.parent.child_expr is not None
-    assert ast.dump(df1.parent.parent.child_expr) == "BinOp(left=Name(id='p', ctx=Load()), " \
+    assert isinstance(df1_parent.child_expr, ast.BinOp)
+    df1_parent_parent = cast(ast_DataFrame, df1_parent.child_expr.left).dataframe
+    assert df1_parent_parent.child_expr is not None
+    assert ast.dump(df1_parent_parent.child_expr) == "BinOp(left=ast_DataFrame(), " \
                                                      "op=Mult(), right=ast_DataFrame())"
-    assert df1.parent.parent.parent.child_expr is not None
-    assert ast.dump(df1.parent.parent.parent.child_expr) == \
-        "BinOp(left=Name(id='p', ctx=Load()), op=Add(), right=ast_DataFrame())"
-    assert df1.parent.parent.parent.parent.child_expr is not None
-    assert ast.dump(df1.parent.parent.parent.parent.child_expr) == \
-        "Attribute(value=Name(id='p', ctx=Load()), attr='x', ctx=Load())"
+    assert isinstance(df1_parent_parent.child_expr, ast.BinOp)
+    df1_parent_parent_parent = cast(ast_DataFrame, df1_parent_parent.child_expr.left).dataframe
+
+    assert df1_parent_parent_parent.child_expr is not None
+    assert ast.dump(df1_parent_parent_parent.child_expr) == \
+        "BinOp(left=ast_DataFrame(), op=Add(), right=ast_DataFrame())"
+    assert isinstance(df1_parent_parent_parent.child_expr, ast.BinOp)
+    assert isinstance(df1_parent_parent_parent.child_expr.left, ast_DataFrame)
+    df1_parent_parent_parent_parent = \
+        cast(ast_DataFrame, df1_parent_parent_parent.child_expr.left).dataframe
+
+    assert df1_parent_parent_parent_parent.child_expr is not None
+    assert ast.dump(df1_parent_parent_parent_parent.child_expr) == \
+        "Attribute(value=ast_DataFrame(), attr='x', ctx=Load())"

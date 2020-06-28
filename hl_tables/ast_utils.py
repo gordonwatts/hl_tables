@@ -20,11 +20,11 @@ class AsyncNodeVisitor:
     allows modifications.
     """
 
-    async def visit(self, node: AST, context: Optional[Any] = None):
+    async def visit(self, node: AST):
         """Visit a node."""
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
-        return await visitor(node, context)
+        return await visitor(node)
 
     async def generic_visit(self, node: AST, context: Optional[Any] = None):
         """Called if no explicit visitor function exists for a node."""
@@ -32,9 +32,9 @@ class AsyncNodeVisitor:
             if isinstance(value, list):
                 for item in value:
                     if isinstance(item, AST):
-                        await self.visit(item, context)
+                        await self.visit(item)
             elif isinstance(value, AST):
-                await self.visit(value, context)
+                await self.visit(value)
 
 
 class AsyncNodeTransformer(AsyncNodeVisitor):
@@ -65,11 +65,11 @@ class AsyncNodeTransformer(AsyncNodeVisitor):
        node = YourTransformer().visit(node)
     """
 
-    async def generic_visit(self, node: AST, context: Optional[Any] = None):
+    async def generic_visit(self, node: AST):
         async def eval_single_field(field, old_value):
             async def eval_list_item(value, new_values):
                 if isinstance(value, AST):
-                    value = await self.visit(value, context)
+                    value = await self.visit(value)
                     if value is None:
                         return
                     elif not isinstance(value, AST):
@@ -84,7 +84,7 @@ class AsyncNodeTransformer(AsyncNodeVisitor):
                 old_value[:] = new_values
 
             elif isinstance(old_value, AST):
-                new_node = await self.visit(old_value, context)
+                new_node = await self.visit(old_value)
                 if new_node is None:
                     delattr(node, field)
                 else:

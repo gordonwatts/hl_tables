@@ -1,5 +1,5 @@
 import ast
-from typing import cast
+from typing import cast, Any
 
 from dataframe_expressions import Column, DataFrame
 from func_adl import EventDataset
@@ -16,8 +16,10 @@ from ..utils_for_testing import hep_tables_make_local_call, hep_tables_make_loca
 
 @pytest.fixture
 def good_xaod():
-    e = EventDataset('localds://dude.dataset')
-    return xaod_table(e)
+    class my_events(EventDataset):
+        async def execute_result_async(self, a: ast.AST) -> Any:
+            raise NotImplementedError()
+    return xaod_table(my_events())
 
 
 @pytest.mark.asyncio
