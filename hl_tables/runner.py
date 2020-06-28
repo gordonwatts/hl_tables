@@ -8,7 +8,6 @@ from dataframe_expressions import DataFrame
 class result:
     '''
     A result returned by a processor.
-    TODO: Do we need this, or is the awkward df all we need (or similar)?
     '''
     def __init__(self, r: object):
         self._result = r
@@ -19,7 +18,6 @@ class result:
 
 
 class awkward_DataFrame(DataFrame):
-    # TODO: COuld we delete this?
     def __init__(self, awk: Any):
         self.awk = awk
 

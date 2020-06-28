@@ -4,8 +4,6 @@ from typing import Any, Callable, Optional, cast
 from dataframe_expressions import DataFrame, ast_DataFrame, exclusive_class
 
 
-# TODO: does this really belong in this package in the end?
-
 class op_base:
     def render(self, f: Callable[[_atlas_3v], Any]) -> Any:
         assert False, 'not implemented'

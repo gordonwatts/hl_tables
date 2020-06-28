@@ -11,9 +11,6 @@ from hep_tables.hep_table import xaod_table
 from ..ast_utils import AsyncNodeTransformer
 from ..runner import ast_awkward, result, runner
 
-# TODO: this should not be in the hl_tables package, but it its own or in
-#       in the `hep_tables` package.
-
 
 def _has_df_ref(a: ast.AST):
     class find_it(ast.NodeVisitor):
@@ -106,10 +103,6 @@ class _transform(AsyncNodeTransformer):
 
     async def visit_ast_DataFrame(self, node: ast_DataFrame) -> ast.AST:
         if self._marker.lookup_mark(node):
-            # TODO: The below is a pretty common pattern. Isn't it implemented
-            # somewhere?
-            # Transition to this: https://github.com/aio-libs/async_lru? We have enough testing
-            # it could be a drop-in.
             async with self._cached_lock:
                 t_id = id(node.dataframe)
                 if t_id in self._cached_results:
