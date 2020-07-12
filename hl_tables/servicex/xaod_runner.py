@@ -1,7 +1,7 @@
 import ast
 import asyncio
 import copy
-from typing import Dict, Iterable, Union
+from typing import Dict, Iterable, Union, Any
 
 from dataframe_expressions import Column, DataFrame, ast_DataFrame
 from dataframe_expressions.asts import ast_Column
@@ -91,6 +91,14 @@ class _mark(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare):
         self.generic_visit(node)
         self._update_good(not _check_for_df_ref([node.left] + node.comparators))
+
+    def visit_Call(self, node: ast.Call) -> Any:
+        'Certain calls are bad'
+        self.generic_visit(node)
+
+        is_histogram = (isinstance(node.func, ast.Attribute)
+                        and node.func.attr == 'histogram')
+        self._update_good(not is_histogram)
 
 
 class _transform(AsyncNodeTransformer):

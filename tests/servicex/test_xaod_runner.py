@@ -80,6 +80,23 @@ async def test_split_call_binary_const(good_xaod, hep_tables_make_local_call):  
 
 
 @pytest.mark.asyncio
+async def test_split_call_histogram(good_xaod, hep_tables_make_local_call):  # NOQA
+
+    from hl_tables.plot import histogram_fill
+    df1 = histogram_fill(good_xaod.x)
+
+    x = xaod_runner()
+    r = await x.process(df1)
+    assert r is not None
+    assert isinstance(r, DataFrame)
+    assert hep_tables_make_local_call.call_count == 1
+    a = r.child_expr
+    assert isinstance(a, ast.Call)
+    assert isinstance(a.func, ast.Attribute)
+    assert isinstance(a.func.value, ast_awkward)
+
+
+@pytest.mark.asyncio
 async def test_split_call_binary(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     df1 = good_xaod.x + good_xaod.y
@@ -169,7 +186,7 @@ async def test_split_in_sqrt(good_xaod, hep_tables_make_local_call):  # NOQA
 async def test_split_in_sqrt_with_divide(good_xaod, hep_tables_make_local_call):  # NOQA
     x = xaod_runner()
     import numpy as np
-    df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y)/1000.0)   # type: ignore
+    df1 = cast(DataFrame, np.sqrt(good_xaod.x + good_xaod.y) / 1000.0)   # type: ignore
     r = await x.process(df1)
     assert r is not None
     assert isinstance(r, DataFrame)
@@ -213,7 +230,7 @@ async def test_run_mapseq(good_xaod, hep_tables_make_local_call):  # NOQA
     llp_good_truth = llp_truth[llp_truth.hasProdVtx & llp_truth.hasDecayVtx]
     l_prod = a_3v(llp_good_truth.prodVtx)
     l_decay = a_3v(llp_good_truth.decayVtx)
-    lxy = (l_decay-l_prod).xy
+    lxy = (l_decay - l_prod).xy
     lxy_2 = lxy[lxy.Count() == 2]
     has_1muon = lxy_2[lxy_2.mapseq(lambda s: s[0] > 1 | s[1] < 2)].Count()
 

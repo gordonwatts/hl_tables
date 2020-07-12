@@ -3,11 +3,11 @@ import ast
 
 import awkward
 from dataframe_expressions import DataFrame, ast_DataFrame
-from hep_tables import histogram
 import pytest
 
 from hl_tables.awkward.awkward_runner import awkward_runner
 from hl_tables.runner import ast_awkward, result
+from hl_tables.plot import histogram_fill
 
 
 @pytest.fixture()
@@ -192,7 +192,7 @@ async def test_histogram(awk_arr_pair):
     df1.child_expr.right = ast_awkward(n2)
 
     xr = awkward_runner()
-    r = await xr.process(histogram(df1, bins=50, range=(0, 20)))
+    r = await xr.process(histogram_fill(df1, bins=50, range=(0, 20)))
 
     assert isinstance(r, result)
 
