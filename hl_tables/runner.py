@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Union
+from typing import Any, Union, Optional
 import ast
 
 from dataframe_expressions import DataFrame
@@ -25,7 +25,7 @@ class awkward_DataFrame(DataFrame):
 class ast_awkward(ast.AST):
     _fields = ('awkward', )
 
-    def __init__(self, a: Any):
+    def __init__(self, a: Optional[Any] = None):
         self.awkward = a
 
 
