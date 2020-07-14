@@ -110,45 +110,50 @@ class _transform(AsyncNodeTransformer):
         self._cached_lock = asyncio.Lock()
 
     async def visit_ast_DataFrame(self, node: ast_DataFrame) -> ast.AST:
-        if self._marker.lookup_mark(node):
-            async with self._cached_lock:
-                t_id = id(node.dataframe)
-                if t_id in self._cached_results:
+        try:
+            if self._marker.lookup_mark(node):
+                async with self._cached_lock:
+                    t_id = id(node.dataframe)
+                    if t_id in self._cached_results:
+                        return self._cached_results[t_id]
+
+                    if t_id in self._results_in_progress:
+                        lock = self._results_in_progress[t_id]
+                        do_calc = False
+                    else:
+                        lock = asyncio.Event()
+                        self._results_in_progress[t_id] = lock
+                        do_calc = True
+                if do_calc:
+                    r = ast_awkward(await hep_tables.make_local_async(node.dataframe))
+                    async with self._cached_lock:
+                        self._cached_results[t_id] = r
+                        del self._results_in_progress[t_id]
+                    lock.set()
+                    return r
+                else:
+                    await lock.wait()
                     return self._cached_results[t_id]
 
-                if t_id in self._results_in_progress:
-                    lock = self._results_in_progress[t_id]
-                    do_calc = False
-                else:
-                    lock = asyncio.Event()
-                    self._results_in_progress[t_id] = lock
-                    do_calc = True
-            if do_calc:
-                r = ast_awkward(await hep_tables.make_local_async(node.dataframe))
-                async with self._cached_lock:
-                    self._cached_results[t_id] = r
-                    del self._results_in_progress[t_id]
-                lock.set()
-                return r
             else:
-                await lock.wait()
-                return self._cached_results[t_id]
+                # Since it isn't good, we need to traverse the tree of all the dependents
+                # to see if we can run anything there. We'll have to alter the "parent"
+                # we are passing down, of course, as we've moved a level down in the tree.
+                df = node.dataframe
+                results = []
+                if df.child_expr is not None:
+                    results.append(self.visit(df.child_expr))
 
-        else:
-            # Since it isn't good, we need to traverse the tree of all the dependents
-            # to see if we can run anything there. We'll have to alter the "parent"
-            # we are passing down, of course, as we've moved a level down in the tree.
-            df = node.dataframe
-            results = []
-            if df.child_expr is not None:
-                results.append(self.visit(df.child_expr))
+                if df.filter is not None:
+                    results.append(self.visit(self._marker._col_ast_for(df.filter)))
 
-            if df.filter is not None:
-                results.append(self.visit(self._marker._col_ast_for(df.filter)))
+                await asyncio.gather(*results)
 
-            await asyncio.gather(*results)
-
-            return node
+                return node
+        except Exception as e:
+            from dataframe_expressions import dumps
+            bad_df = '\n'.join(dumps(node.dataframe))
+            raise Exception(f'Internal Error: Failed to render DataFrame: {bad_df}') from e
 
     async def visit_ast_Column(self, node: ast_Column) -> ast.AST:
         # Since this is never marked "good", we need to only explore the child expressions
