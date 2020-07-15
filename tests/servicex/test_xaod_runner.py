@@ -1,15 +1,16 @@
 import ast
-from typing import cast, Any
+from typing import Any, cast
+
+import pytest
+from func_adl import EventDataset
 
 from dataframe_expressions import Column, DataFrame
-from func_adl import EventDataset
 from hep_tables import xaod_table
-import pytest
-
 from hl_tables.runner import ast_awkward, result
 from hl_tables.servicex.xaod_runner import xaod_runner
 
-from ..utils_for_testing import hep_tables_make_local_call, hep_tables_make_local_call_pause  # NOQA
+from ..utils_for_testing import (hep_tables_make_local_call,  # NOQA
+                                 hep_tables_make_local_call_pause)
 
 # For dev work do: pip install git+https://github.com/numpy/numpy-stubs
 
