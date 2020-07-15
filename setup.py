@@ -26,7 +26,7 @@ setup(name="hl_tables",
       license="TBD",
       test_suite="tests",
       install_requires=[
-          "hep_tables>=1.0b1,<2a",
+          "hep_tables>=1.1a1,<2a",
           "dataframe_expressions>=1.1a1",
           "make_it_sync",
           "matplotlib"
