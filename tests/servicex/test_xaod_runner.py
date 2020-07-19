@@ -1,10 +1,11 @@
 import ast
 from typing import Any, cast
+from dataframe_expressions.DataFrame import DataFrame
+from func_adl.EventDataset import EventDataset
 
 import pytest
-from func_adl import EventDataset
 
-from dataframe_expressions import Column, DataFrame
+from dataframe_expressions import Column
 from hep_tables import xaod_table
 from hl_tables.runner import ast_awkward, result
 from hl_tables.servicex.xaod_runner import xaod_runner

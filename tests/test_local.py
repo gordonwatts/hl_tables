@@ -1,7 +1,7 @@
 import ast
 from typing import Any
 
-from func_adl import EventDataset
+from func_adl.EventDataset import EventDataset
 from hep_tables import xaod_table
 import pytest
 
