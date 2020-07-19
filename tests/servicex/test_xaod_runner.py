@@ -215,7 +215,7 @@ async def test_run_twice(good_xaod, hep_tables_make_local_call):  # NOQA
 
 
 @pytest.mark.asyncio
-async def test_request_twice(good_xaod, hep_tables_make_local_call_pause):  # NOQA
+async def test_request_twice(good_xaod, hep_tables_make_local_call_pause):
     x = xaod_runner()
     ok_events = good_xaod[good_xaod.x > 10]
     df1 = ok_events.x + ok_events.y + ok_events.x
@@ -223,6 +223,22 @@ async def test_request_twice(good_xaod, hep_tables_make_local_call_pause):  # NO
 
     assert hep_tables_make_local_call_pause.call_count == 2
 
+
+@pytest.mark.asyncio
+async def test_function_call(good_xaod, hep_tables_make_local_call_pause):
+    called = good_xaod.getAttribute('EMF')
+
+    x = xaod_runner()
+    await x.process(called)
+
+    assert hep_tables_make_local_call_pause.call_count == 1
+    df_arg = hep_tables_make_local_call_pause.call_args_list[0][0][0]
+    assert isinstance(df_arg, DataFrame)
+    assert isinstance(df_arg.child_expr, ast.Call)
+    arg = df_arg.child_expr
+    assert len(arg.args) == 1
+    assert isinstance(arg.args[0], ast.Str)
+    assert cast(ast.Str, arg.args[0]).s == 'EMF'
 
 @pytest.mark.asyncio
 async def test_run_mapseq(good_xaod, hep_tables_make_local_call):  # NOQA
