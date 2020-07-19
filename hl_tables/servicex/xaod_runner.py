@@ -3,7 +3,8 @@ import asyncio
 import copy
 from typing import Dict, Iterable, Union, Any
 
-from dataframe_expressions import Column, DataFrame, ast_DataFrame
+from dataframe_expressions import Column, ast_DataFrame
+from dataframe_expressions.DataFrame import DataFrame
 from dataframe_expressions.asts import ast_Column
 import hep_tables
 from hep_tables.hep_table import xaod_table
